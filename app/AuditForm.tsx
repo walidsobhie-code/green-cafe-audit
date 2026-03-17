@@ -74,31 +74,23 @@ export default function AuditForm() {
       try {
         const emails = emailList.split(',').map(e => e.trim()).filter(e => e);
         
-        // Convert blob to base64
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
-        reader.onloadend = async () => {
-          const base64data = reader.result as string;
-          
-          for (const email of emails) {
-            await emailjs.send(
-              'service_l4f63ne',
-              'audit_template',
-              {
-                to_email: email,
-                branch_name: formData.branchName,
-                auditor_name: formData.auditorName,
-                audit_date: formData.date,
-                score: `${shortlist.pct}%`,
-                total_score: `${shortlist.total}/${shortlist.max}`,
-                action_items: actionItems.length > 0 
-                  ? actionItems.map((a: any) => `• Q${a.point}: ${a.action}`).join('\n')
-                  : 'No action items - All passed!',
-              },
-              'UPuEMQIU60vxk09Rd'
-            );
-          }
-        };
+        const actionText = actionItems.length > 0 
+          ? actionItems.map((a: any) => `• Q${a.point}: ${a.action}`).join('\n')
+          : '✅ All items passed!';
+        
+        for (const email of emails) {
+          await emailjs.send(
+            'service_l4f63ne',
+            'audit_template',
+            {
+              to_email: email,
+              name: formData.auditorName,
+              time: formData.date,
+              message: `📍 Branch: ${formData.branchName}\n📊 Score: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})\n\n📋 Action Items:\n${actionText}`,
+            },
+            'UPuEMQIU60vxk09Rd'
+          );
+        }
       } catch (emailError) {
         console.log('Email error:', emailError);
       }
