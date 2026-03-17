@@ -81,7 +81,7 @@ export default function AuditForm() {
         for (const email of emails) {
           await emailjs.send(
             'service_l4f63ne',
-            'audit_template',
+            'template_t1ob5uh',
             {
               to_email: email,
               name: formData.auditorName,
