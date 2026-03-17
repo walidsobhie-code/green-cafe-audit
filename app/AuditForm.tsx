@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { auditCategories, shortlistIds } from '@/lib/auditData';
 import { generatePDFBlob, AuditSubmission } from '@/lib/pdfGenerator';
+import emailjs from 'emailjs-com';
 
 interface ScoreEntry { score: number; note: string; photo?: string; }
 
@@ -59,11 +60,50 @@ export default function AuditForm() {
       emailList: emailList.split(',').map(e => e.trim()).filter(e => e)
     };
     
+    // Generate PDF
     const blob = generatePDFBlob(submission);
+    
+    // Download PDF
     const a = document.createElement('a'); 
     a.href = URL.createObjectURL(blob);
     a.download = `Green_Audit_${formData.branchName}_${formData.date}.pdf`; 
     a.click();
+    
+    // Send via EmailJS if emails provided
+    if (emailList.trim()) {
+      try {
+        const emails = emailList.split(',').map(e => e.trim()).filter(e => e);
+        
+        // Convert blob to base64
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+          const base64data = reader.result as string;
+          
+          for (const email of emails) {
+            await emailjs.send(
+              'service_l4f63ne',
+              'audit_template',
+              {
+                to_email: email,
+                branch_name: formData.branchName,
+                auditor_name: formData.auditorName,
+                audit_date: formData.date,
+                score: `${shortlist.pct}%`,
+                total_score: `${shortlist.total}/${shortlist.max}`,
+                action_items: actionItems.length > 0 
+                  ? actionItems.map((a: any) => `• Q${a.point}: ${a.action}`).join('\n')
+                  : 'No action items - All passed!',
+              },
+              'UPuEMQIU60vxk09Rd'
+            );
+          }
+        };
+      } catch (emailError) {
+        console.log('Email error:', emailError);
+      }
+    }
+    
     setSubmitted(true); setIsSubmitting(false);
   };
 
