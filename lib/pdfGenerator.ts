@@ -15,99 +15,100 @@ export interface AuditSubmission {
   emailList: string[];
 }
 
+const weightByCategory: Record<string, number> = {
+  'customer-experience': 3,
+  'food-safety': 3,
+  'beverage-quality': 3,
+  'operations': 2,
+  'equipment': 2,
+  'inventory': 1,
+  'staff-development': 2,
+  'compliance': 3,
+  'shift-leadership': 2,
+};
+
 export function generatePDF(submission: AuditSubmission): jsPDF {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
   // Header
-  doc.setFillColor(34, 139, 34); // Green color
+  doc.setFillColor(34, 139, 34);
   doc.rect(0, 0, pageWidth, 30, 'F');
   
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
   doc.text('Green Cafe Audit Report', pageWidth / 2, 12, { align: 'center' });
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.text('تقرير تدقيق جرين كافيه', pageWidth / 2, 20, { align: 'center' });
 
-  // Reset text color
   doc.setTextColor(0, 0, 0);
-  
-  // Branch & Auditor Info
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
   
   const infoY = 40;
-  doc.text('Branch / الفرع:', 14, infoY);
-  doc.setFont('helvetica', 'normal');
-  doc.text(submission.branchName, 50, infoY);
-  
-  doc.setFont('helvetica', 'bold');
-  doc.text('Auditor / المدقق:', 14, infoY + 8);
-  doc.setFont('helvetica', 'normal');
-  doc.text(submission.auditorName, 50, infoY + 8);
-  
-  doc.setFont('helvetica', 'bold');
-  doc.text('Date / التاريخ:', 14, infoY + 16);
-  doc.setFont('helvetica', 'normal');
-  doc.text(submission.date, 50, infoY + 16);
+  doc.text(`Branch: ${submission.branchName}`, 14, infoY);
+  doc.text(`Auditor: ${submission.auditorName}`, 14, infoY + 6);
+  doc.text(`Date: ${submission.date}`, 14, infoY + 12);
 
-  // Score Summary
-  doc.setFillColor(240, 240, 240);
-  doc.rect(14, infoY + 24, pageWidth - 28, 25, 'F');
-  
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text(`Total Score / النتيجة الإجمالية: ${submission.totalScore}/100`, pageWidth / 2, infoY + 35, { align: 'center' });
-  
-  doc.setFontSize(12);
+  // Score
   const scoreColor = submission.percentage >= 80 ? [34, 139, 34] : submission.percentage >= 60 ? [255, 165, 0] : [220, 20, 60];
-  doc.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2]);
-  doc.text(`${submission.percentage}%`, pageWidth / 2, infoY + 45, { align: 'center' });
-  
-  doc.setTextColor(0, 0, 0);
+  doc.setFillColor(...scoreColor as [number, number, number]);
+  doc.rect(140, infoY - 5, 50, 18, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.text(`${submission.percentage}%`, 165, infoY + 5, { align: 'center' });
+  doc.setFontSize(10);
+  doc.text(`${submission.totalScore} pts`, 165, infoY + 11, { align: 'center' });
 
-  // Detailed Scores Table
-  const tableData: string[][] = [];
-  
-  const scoreEntries = Object.entries(submission.scores);
-  for (const cat of scoreEntries) {
-    if (cat[1] && cat[1].score >= 0) {
-      tableData.push([
-        `Q${cat[0]}`,
-        cat[1].score.toString(),
-        cat[1].note || '-'
-      ]);
-    }
-  }
+  // Results by Category
+  doc.setTextColor(0, 0, 0);
+  const categories = [
+    { id: 'customer-experience', name: 'Customer Experience' },
+    { id: 'food-safety', name: 'Food Safety' },
+    { id: 'beverage-quality', name: 'Beverage Quality' },
+    { id: 'operations', name: 'Operations' },
+    { id: 'equipment', name: 'Equipment' },
+    { id: 'inventory', name: 'Inventory' },
+    { id: 'staff-development', name: 'Staff Development' },
+    { id: 'compliance', name: 'Compliance' },
+    { id: 'shift-leadership', name: 'Shift Leadership' },
+  ];
+
+  const tableData = categories.map(cat => {
+    const weight = weightByCategory[cat.id] || 1;
+    let catTotal = 0, catMax = 0;
+    
+    Object.entries(submission.scores).forEach(([id, entry]) => {
+      if (entry?.score !== undefined && entry.score >= 0) {
+        catTotal += entry.score * weight;
+        catMax += 2 * weight;
+      }
+    });
+    
+    const pct = catMax > 0 ? Math.round((catTotal / catMax) * 100) : 0;
+    return [cat.name, `${catTotal}/${catMax}`, `${pct}%`];
+  });
 
   autoTable(doc, {
-    startY: infoY + 55,
-    head: [['#', 'Score', 'Notes / ملاحظات']],
+    startY: infoY + 20,
+    head: [['Category', 'Score', '%']],
     body: tableData,
     theme: 'striped',
     headStyles: { fillColor: [34, 139, 34] },
     styles: { fontSize: 9 },
   });
 
-  // Action Plan
-  const finalY = (doc as any).lastAutoTable.finalY + 15;
-  
+  // Action Items
   if (submission.actionItems.length > 0) {
-    doc.setFontSize(14);
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('Action Plan / خطة الإجراءات', 14, finalY);
+    doc.text('Action Plan', 14, finalY);
     
-    const actionData = submission.actionItems.map(item => [
-      item.point,
-      item.action,
-      item.responsible,
-      item.deadline
-    ]);
-
+    const actionData = submission.actionItems.map(item => [item.point, item.action, item.responsible, item.deadline]);
     autoTable(doc, {
-      startY: finalY + 5,
-      head: [['Issue / المشكلة', 'Action / الإجراء', 'Responsible / المسؤول', 'Deadline / الموعد']],
+      startY: finalY + 3,
+      head: [['Question', 'Action Required', 'Responsible', 'Date']],
       body: actionData,
       theme: 'grid',
       headStyles: { fillColor: [220, 53, 69] },
@@ -119,10 +120,9 @@ export function generatePDF(submission: AuditSubmission): jsPDF {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(128, 128, 128);
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
-    doc.text('Generated by Green Cafe Audit System', pageWidth / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' });
+    doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
   }
 
   return doc;
