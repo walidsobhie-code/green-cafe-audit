@@ -44,7 +44,7 @@ export function generatePDF(submission: AuditSubmission): jsPDF {
   doc.setFont('helvetica', 'bold');
   doc.text('Green Cafe Audit Report', pageWidth / 2, 12, { align: 'center' });
   doc.setFontSize(10);
-  doc.text('تقرير تدقيق جرين كافيه', pageWidth / 2, 20, { align: 'center' });
+  doc.text('Green Cafe Egypt - Professional Audit', pageWidth / 2, 20, { align: 'center' });
 
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
