@@ -125,6 +125,19 @@ export function generatePDF(submission: AuditSubmission): jsPDF {
       3: { cellWidth: 15 },
       4: { cellWidth: 'auto' },
     },
+    didParseCell: function(data) {
+      if (data.column.index === 3 && data.section === 'body') {
+        if (data.cell.raw === 'FAIL') {
+          data.cell.styles.textColor = [220, 20, 60];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (data.cell.raw === 'PARTIAL') {
+          data.cell.styles.textColor = [255, 165, 0];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (data.cell.raw === 'PASS') {
+          data.cell.styles.textColor = [34, 139, 34];
+        }
+      }
+    }
   });
 
   // ACTION PLAN
