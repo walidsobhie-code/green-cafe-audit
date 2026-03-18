@@ -83,16 +83,15 @@ export default function AuditForm() {
         ? actionItems.map((a: any) => `• Q${a.point}: ${a.action}`).join('\n')
         : '✅ All items passed!';
       
-      const detailedMsg = `GREEN CAFE AUDIT REPORT
-Branch: ${formData.branchName}
+      const detailedMsg = `Branch: ${formData.branchName}
 Auditor: ${formData.auditorName}
 Date: ${formData.date}
 Score: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})
 
-ACTION ITEMS (${actionItems.length}):
+Action Items (${actionItems.length}):
 ${actionText}
 
-ALL RESULTS:
+All Results:
 ${allResults}`;
       
       for (const email of emails) {
@@ -100,7 +99,14 @@ ${allResults}`;
           await emailjs.send(
             'service_l4f63ne',
             '3z5j4l7',
-            { name: detailedMsg, time: formData.date, message: detailedMsg },
+            { 
+              branch: formData.branchName,
+              auditor: formData.auditorName,
+              date: formData.date,
+              score: `${shortlist.pct}% (${shortlist.total}/${shortlist.max})`,
+              actions: actionText,
+              results: allResults
+            },
             'UPuEMQIU60vxk09Rd'
           );
         } catch (e) { console.log('Email error:', e); }
