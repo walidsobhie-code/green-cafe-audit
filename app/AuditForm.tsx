@@ -99,7 +99,7 @@ ${allResults}`;
           emailjs.init('UPuEMQIU60vxk09Rd');
           const result = await emailjs.send(
             'service_l4f63ne',
-            '3z5j4l7',
+            'template_t1ob5uh',
             { 
               branch: formData.branchName,
               auditor: formData.auditorName,
