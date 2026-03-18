@@ -75,7 +75,7 @@ export default function AuditForm() {
       
       // Build detailed results
       const allResults = Object.entries(scores).map(([id, entry]: [string, any]) => {
-        const scoreLabel = entry?.score === 2 ? '✅' : entry?.score === 1 ? '⚠️' : entry?.score === 0 ? '❌' : '⏳';
+        const scoreLabel = entry?.score === 2 ? 'PASS' : entry?.score === 1 ? 'PARTIAL' : entry?.score === 0 ? 'FAIL' : 'N/A';
         return `${scoreLabel} Q${id}: ${entry?.note || (entry?.score === 2 ? 'Passed' : 'Needs action')}`;
       }).join('\n');
       
@@ -83,16 +83,10 @@ export default function AuditForm() {
         ? actionItems.map((a: any) => `• Q${a.point}: ${a.action}`).join('\n')
         : '✅ All items passed!';
       
-      const detailedMsg = `Branch: ${formData.branchName}
-Auditor: ${formData.auditorName}
-Date: ${formData.date}
-Score: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})
+      const detailedMsg = `SCORE: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})
 
-Action Items (${actionItems.length}):
-${actionText}
-
-All Results:
-${allResults}`;
+ACTION ITEMS (${actionItems.length}):
+${actionText}`;
       
       for (const email of emails) {
         try {
