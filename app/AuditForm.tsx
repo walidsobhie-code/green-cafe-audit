@@ -71,28 +71,43 @@ export default function AuditForm() {
     
     // Send via EmailJS if emails provided
     if (emailList.trim()) {
-      try {
-        const emails = emailList.split(',').map(e => e.trim()).filter(e => e);
-        
-        const actionText = actionItems.length > 0 
-          ? actionItems.map((a: any) => `• Q${a.point}: ${a.action}`).join('\n')
-          : '✅ All items passed!';
-        
-        for (const email of emails) {
+      const emails = emailList.split(',').map(e => e.trim()).filter(e => e);
+      
+      // Build detailed results
+      const allResults = Object.entries(scores).map(([id, entry]: [string, any]) => {
+        const scoreLabel = entry?.score === 2 ? '✅' : entry?.score === 1 ? '⚠️' : entry?.score === 0 ? '❌' : '⏳';
+        return `${scoreLabel} Q${id}: ${entry?.note || (entry?.score === 2 ? 'Passed' : 'Needs action')}`;
+      }).join('\n');
+      
+      const actionText = actionItems.length > 0 
+        ? actionItems.map((a: any) => `• Q${a.point}: ${a.action}`).join('\n')
+        : '✅ All items passed!';
+      
+      const detailedMsg = `📊 GREEN CAFE AUDIT REPORT
+━━━━━━━━━━━━━━━━━━━━
+🏪 Branch: ${formData.branchName}
+👤 Auditor: ${formData.auditorName}
+📅 Date: ${formData.date}
+📈 Score: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})
+
+⚠️ ACTION ITEMS (${actionItems.length}):
+${actionText}
+
+📝 ALL RESULTS:
+${allResults}
+
+📄 Full PDF report downloaded.`;
+      
+      for (const email of emails) {
+        try {
           await emailjs.send(
             'service_l4f63ne',
             '3z5j4l7',
-            {
-              to_email: email,
-              name: formData.auditorName,
-              time: formData.date,
-              message: `📍 Branch: ${formData.branchName}\n📊 Score: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})\n\n📋 Action Items:\n${actionText}`,
-            },
+            { name: detailedMsg, time: formData.date, message: detailedMsg },
             'UPuEMQIU60vxk09Rd'
           );
-        }
-      } catch (emailError) {
-        console.log('Email error:', emailError);
+          console.log('Email sent:', email);
+        } catch (e) { console.log('Email error:', e); }
       }
     }
     
