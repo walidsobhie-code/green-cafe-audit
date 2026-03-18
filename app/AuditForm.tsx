@@ -96,7 +96,7 @@ ${allResults}`;
       
       for (const email of emails) {
         try {
-          await emailjs.send(
+          const result = await emailjs.send(
             'service_l4f63ne',
             '3z5j4l7',
             { 
@@ -109,8 +109,13 @@ ${allResults}`;
             },
             'UPuEMQIU60vxk09Rd'
           );
-        } catch (e) { console.log('Email error:', e); }
+          console.log('Email sent to:', email, result);
+        } catch (e) { 
+          console.log('Email error:', e); 
+          alert('Email failed: ' + e);
+        }
       }
+      alert(`✅ Report sent to ${emails.length} email(s)!`);
     }
     
     setSubmitted(true); setIsSubmitting(false);
