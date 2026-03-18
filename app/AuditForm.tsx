@@ -66,7 +66,7 @@ export default function AuditForm() {
     // Download PDF
     const a = document.createElement('a'); 
     a.href = URL.createObjectURL(blob);
-    a.download = `Green_Audit_${formData.branchName}_${formData.date}.pdf`; 
+    a.download = `Green_Audit_${formData.branchName.replace(/[^a-zA-Z0-9]/g, '_')}_${formData.date}.pdf`; 
     a.click();
     
     // Send via EmailJS if emails provided
