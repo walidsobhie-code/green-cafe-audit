@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react';
 import { auditCategories, shortlistIds } from '@/lib/auditData';
 import { generatePDFBlob, AuditSubmission } from '@/lib/pdfGenerator';
-import emailjs from 'emailjs-com';
 
 interface ScoreEntry { score: number; note: string; photo?: string; }
 
@@ -63,56 +62,53 @@ export default function AuditForm() {
     // Generate PDF
     const blob = generatePDFBlob(submission);
     
+    // Convert to base64
+    const reader = new FileReader();
+    const pdfBase64 = await new Promise<string>((resolve) => {
+      reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+      reader.readAsDataURL(blob);
+    });
+    
     // Download PDF
     const a = document.createElement('a'); 
     a.href = URL.createObjectURL(blob);
     a.download = `Green_Audit_${formData.branchName.replace(/[^a-zA-Z0-9]/g, '_')}_${formData.date}.pdf`; 
     a.click();
     
-    // Send via EmailJS if emails provided
+    // Send via API if emails provided
     if (emailList.trim()) {
       const emails = emailList.split(',').map(e => e.trim()).filter(e => e);
-      
-      // Build detailed results
-      const allResults = Object.entries(scores).map(([id, entry]: [string, any]) => {
-        const scoreLabel = entry?.score === 2 ? 'PASS' : entry?.score === 1 ? 'PARTIAL' : entry?.score === 0 ? 'FAIL' : 'N/A';
-        return `${scoreLabel} Q${id}: ${entry?.note || (entry?.score === 2 ? 'Passed' : 'Needs action')}`;
-      }).join('\n');
       
       const actionText = actionItems.length > 0 
         ? actionItems.map((a: any) => `• Q${a.point}: ${a.action}`).join('\n')
         : '✅ All items passed!';
       
-      const detailedMsg = `SCORE: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})
-
-ACTION ITEMS (${actionItems.length}):
-${actionText}`;
-      
       for (const email of emails) {
         try {
-          emailjs.init('UPuEMQIU60vxk09Rd');
-          const result = await emailjs.send(
-            'service_l4f63ne',
-            'template_t1ob5uh',
-            { 
-              name: `Green Cafe Audit - ${formData.branchName}`,
-              time: formData.date,
-              message: `SCORE: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})
-
-ACTION ITEMS (${actionItems.length}):
-${actionText}
-
-Full report downloaded as PDF.`
-            },
-            'UPuEMQIU60vxk09Rd'
-          );
-          console.log('Email sent to:', email, result);
+          const response = await fetch('/api/send-audit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              branchName: formData.branchName,
+              auditorName: formData.auditorName,
+              date: formData.date,
+              score: `${shortlist.pct}% (${shortlist.total}/${shortlist.max})`,
+              actionItems: actionText,
+              pdfBase64
+            })
+          });
+          
+          if (response.ok) {
+            console.log('Email sent to:', email);
+          } else {
+            console.log('Email failed');
+          }
         } catch (e) { 
-          console.log('Email error:', JSON.stringify(e));
-          alert('Email failed: ' + JSON.stringify(e));
+          console.log('Email error:', e);
         }
       }
-      alert(`✅ Report sent to ${emails.length} email(s)!`);
+      alert(`✅ Report sent to ${emails.length} email(s) with PDF!`);
     }
     
     setSubmitted(true); setIsSubmitting(false);
