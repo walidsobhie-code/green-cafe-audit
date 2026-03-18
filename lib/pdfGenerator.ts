@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { auditCategories, AuditPoint } from './auditData';
 
 export interface AuditSubmission {
   id: string;
@@ -26,6 +27,9 @@ const weightByCategory: Record<string, number> = {
   'compliance': 3,
   'shift-leadership': 2,
 };
+
+// Flatten all points
+const allPoints: AuditPoint[] = auditCategories.flatMap(cat => cat.points);
 
 export function generatePDF(submission: AuditSubmission): jsPDF {
   const doc = new jsPDF();
@@ -60,25 +64,14 @@ export function generatePDF(submission: AuditSubmission): jsPDF {
   doc.setFontSize(10);
   doc.text(`${submission.totalScore} pts`, 165, infoY + 11, { align: 'center' });
 
-  // Results by Category
+  // Category Summary
   doc.setTextColor(0, 0, 0);
-  const categories = [
-    { id: 'customer-experience', name: 'Customer Experience' },
-    { id: 'food-safety', name: 'Food Safety' },
-    { id: 'beverage-quality', name: 'Beverage Quality' },
-    { id: 'operations', name: 'Operations' },
-    { id: 'equipment', name: 'Equipment' },
-    { id: 'inventory', name: 'Inventory' },
-    { id: 'staff-development', name: 'Staff Development' },
-    { id: 'compliance', name: 'Compliance' },
-    { id: 'shift-leadership', name: 'Shift Leadership' },
-  ];
-
-  const tableData = categories.map(cat => {
+  const tableData = auditCategories.map(cat => {
     const weight = weightByCategory[cat.id] || 1;
     let catTotal = 0, catMax = 0;
     
-    Object.entries(submission.scores).forEach(([id, entry]) => {
+    cat.points.forEach(point => {
+      const entry = submission.scores[point.id];
       if (entry?.score !== undefined && entry.score >= 0) {
         catTotal += entry.score * weight;
         catMax += 2 * weight;
@@ -98,21 +91,80 @@ export function generatePDF(submission: AuditSubmission): jsPDF {
     styles: { fontSize: 9 },
   });
 
-  // Action Items
-  if (submission.actionItems.length > 0) {
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
-    doc.setFontSize(12);
+  // ALL QUESTIONS RESULTS
+  doc.addPage();
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('All Questions Results', 14, 20);
+  
+  const allQuestionsData = allPoints.map(point => {
+    const scoreEntry = submission.scores[point.id];
+    const score = scoreEntry?.score ?? -1;
+    const status = score === 2 ? '✅' : score === 1 ? '⚠️' : score === 0 ? '❌' : 'N/A';
+    const note = scoreEntry?.note || '-';
+    return [
+      `#${point.id}`,
+      point.category.substring(0, 8),
+      point.question.substring(0, 45) + (point.question.length > 45 ? '...' : ''),
+      status,
+      note.substring(0, 35)
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 25,
+    head: [['#', 'Cat', 'Question', 'Status', 'Notes']],
+    body: allQuestionsData,
+    theme: 'striped',
+    headStyles: { fillColor: [34, 139, 34] },
+    styles: { fontSize: 7 },
+    columnStyles: {
+      0: { cellWidth: 10 },
+      1: { cellWidth: 15 },
+      2: { cellWidth: 90 },
+      3: { cellWidth: 15 },
+      4: { cellWidth: 'auto' },
+    },
+  });
+
+  // ACTION PLAN
+  const actionItems = submission.actionItems.length > 0 ? submission.actionItems : 
+    Object.entries(submission.scores)
+      .filter(([_, e]) => e && e.score !== undefined && e.score < 2 && e.score !== -1)
+      .map(([id, e]) => ({ 
+        point: id, 
+        action: e?.note || 'Needs improvement', 
+        responsible: submission.auditorName, 
+        deadline: submission.date 
+      }));
+
+  if (actionItems.length > 0) {
+    doc.addPage();
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Action Plan', 14, finalY);
+    doc.setTextColor(220, 53, 69);
+    doc.text(`Action Plan (${actionItems.length} items)`, 14, 20);
     
-    const actionData = submission.actionItems.map(item => [item.point, item.action, item.responsible, item.deadline]);
+    const actionData = actionItems.map(item => {
+      const point = allPoints.find(p => p.id === parseInt(item.point));
+      const question = point ? point.question.substring(0, 45) : `Q${item.point}`;
+      return [item.point, question, item.action, item.responsible, item.deadline];
+    });
+    
     autoTable(doc, {
-      startY: finalY + 3,
-      head: [['Question', 'Action Required', 'Responsible', 'Date']],
+      startY: 25,
+      head: [['#', 'Question', 'Action Required', 'Responsible', 'Deadline']],
       body: actionData,
       theme: 'grid',
       headStyles: { fillColor: [220, 53, 69] },
-      styles: { fontSize: 8 },
+      styles: { fontSize: 9 },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 65 },
+        2: { cellWidth: 65 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 25 },
+      },
     });
   }
 
