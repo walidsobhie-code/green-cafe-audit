@@ -83,20 +83,17 @@ export default function AuditForm() {
         ? actionItems.map((a: any) => `• Q${a.point}: ${a.action}`).join('\n')
         : '✅ All items passed!';
       
-      const detailedMsg = `📊 GREEN CAFE AUDIT REPORT
-━━━━━━━━━━━━━━━━━━━━
-🏪 Branch: ${formData.branchName}
-👤 Auditor: ${formData.auditorName}
-📅 Date: ${formData.date}
-📈 Score: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})
+      const detailedMsg = `GREEN CAFE AUDIT REPORT
+Branch: ${formData.branchName}
+Auditor: ${formData.auditorName}
+Date: ${formData.date}
+Score: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})
 
-⚠️ ACTION ITEMS (${actionItems.length}):
+ACTION ITEMS (${actionItems.length}):
 ${actionText}
 
-📝 ALL RESULTS:
-${allResults}
-
-📄 Full PDF report downloaded.`;
+ALL RESULTS:
+${allResults}`;
       
       for (const email of emails) {
         try {
@@ -106,7 +103,6 @@ ${allResults}
             { name: detailedMsg, time: formData.date, message: detailedMsg },
             'UPuEMQIU60vxk09Rd'
           );
-          console.log('Email sent:', email);
         } catch (e) { console.log('Email error:', e); }
       }
     }
