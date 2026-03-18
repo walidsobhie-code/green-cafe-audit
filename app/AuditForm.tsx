@@ -101,12 +101,9 @@ ${allResults}`;
             'service_l4f63ne',
             'template_t1ob5uh',
             { 
-              branch: formData.branchName,
-              auditor: formData.auditorName,
-              date: formData.date,
-              score: `${shortlist.pct}% (${shortlist.total}/${shortlist.max})`,
-              actions: actionText,
-              results: allResults
+              name: `Branch: ${formData.branchName}\nScore: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})`,
+              time: formData.date,
+              message: `Action Items (${actionItems.length}):\n${actionText}\n\nAll Results:\n${allResults}`
             },
             'UPuEMQIU60vxk09Rd'
           );
