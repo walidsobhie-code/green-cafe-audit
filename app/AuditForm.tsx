@@ -101,9 +101,14 @@ ${allResults}`;
             'service_l4f63ne',
             'template_t1ob5uh',
             { 
-              name: `Branch: ${formData.branchName}\nScore: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})`,
+              name: `Green Cafe Audit - ${formData.branchName}`,
               time: formData.date,
-              message: `Action Items (${actionItems.length}):\n${actionText}\n\nAll Results:\n${allResults}`
+              message: `SCORE: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})
+
+ACTION ITEMS (${actionItems.length}):
+${actionText}
+
+Full report downloaded as PDF.`
             },
             'UPuEMQIU60vxk09Rd'
           );
