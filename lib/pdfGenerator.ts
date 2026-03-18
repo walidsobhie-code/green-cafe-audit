@@ -100,7 +100,7 @@ export function generatePDF(submission: AuditSubmission): jsPDF {
   const allQuestionsData = allPoints.map(point => {
     const scoreEntry = submission.scores[point.id];
     const score = scoreEntry?.score ?? -1;
-    const status = score === 2 ? '✅' : score === 1 ? '⚠️' : score === 0 ? '❌' : 'N/A';
+    const status = score === 2 ? 'PASS' : score === 1 ? 'PARTIAL' : score === 0 ? 'FAIL' : 'N/A';
     const note = scoreEntry?.note || '-';
     return [
       `#${point.id}`,
@@ -146,7 +146,8 @@ export function generatePDF(submission: AuditSubmission): jsPDF {
     doc.text(`Action Plan (${actionItems.length} items)`, 14, 20);
     
     const actionData = actionItems.map(item => {
-      const point = allPoints.find(p => p.id === parseInt(item.point));
+      const pointId = parseInt(item.point.replace('Q', ''));
+      const point = allPoints.find(p => p.id === pointId);
       const question = point ? point.question.substring(0, 45) : `Q${item.point}`;
       return [item.point, question, item.action, item.responsible, item.deadline];
     });
