@@ -1,10 +1,21 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { auditCategories, shortlistIds } from '@/lib/auditData';
+import { useState, useRef, useEffect } from 'react';
+import { auditCategories, getShortlistPoints, AuditPoint } from '@/lib/auditData';
 import { generatePDFBlob, AuditSubmission } from '@/lib/pdfGenerator';
 
-interface ScoreEntry { score: number; note: string; photo?: string; }
+interface ScoreEntry { score: number; note: string; photo?: string; temperature?: string; }
+
+// Auto-save key
+const STORAGE_KEY = 'green-cafe-audit-draft';
+
+interface SavedDraft {
+  formData: { branchName: string; auditorName: string; date: string };
+  scores: Record<number, ScoreEntry>;
+  auditMode: 'shortlist' | 'full';
+  lang: 'en' | 'ar';
+  savedAt: number;
+}
 
 const scoreButtons = [
   { s: 2, l: '✓', c: 'bg-green-600 text-white' },
@@ -19,10 +30,42 @@ export default function AuditForm() {
   const [auditMode, setAuditMode] = useState<'shortlist' | 'full'>('shortlist');
   const [formData, setFormData] = useState({ branchName: '', auditorName: '', date: new Date().toISOString().split('T')[0] });
   const [scores, setScores] = useState<Record<number, ScoreEntry>>({});
-  const [emailList, setEmailList] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
   const fileInputRefs = useRef<Record<number, HTMLInputElement>>({});
+
+  // Auto-save: Load draft on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const draft: SavedDraft = JSON.parse(saved);
+        // Only load if less than 7 days old
+        if (Date.now() - draft.savedAt < 7 * 24 * 60 * 60 * 1000) {
+          setFormData(draft.formData);
+          setScores(draft.scores);
+          setAuditMode(draft.auditMode);
+          setLang(draft.lang);
+          setHasDraft(true);
+        }
+      }
+    } catch (e) { console.log('No draft found'); }
+  }, []);
+
+  // Auto-save: Save on changes
+  useEffect(() => {
+    if (!submitted && (formData.branchName || formData.auditorName || Object.keys(scores).length > 0)) {
+      const draft: SavedDraft = { formData, scores, auditMode, lang, savedAt: Date.now() };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    }
+  }, [formData, scores, auditMode, lang, submitted]);
+
+  // Clear draft after successful submission
+  const clearDraft = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setHasDraft(false);
+  };
 
   const handleScore = (id: number, score: number) => setScores(p => ({ ...p, [id]: { ...p[id], score } }));
   const handleNote = (id: number, note: string) => setScores(p => ({ ...p, [id]: { ...p[id], note } }));
@@ -32,56 +75,118 @@ export default function AuditForm() {
     r.readAsDataURL(file);
   };
 
-  const calc = (ids: number[]) => {
-    let t = 0, m = 0;
-    ids.forEach(id => { const s = scores[id]?.score; if (s !== undefined && s >= 0) { t += s; m += 2; } });
-    return { total: t, max: m, pct: m ? Math.round((t / m) * 100) : 0 };
+  // Enhanced calculation with CCP weighting
+  const calc = (ids: number[], categories: typeof auditCategories) => {
+    let t = 0, m = 0, ccpPassed = 0, ccpTotal = 0, ccpFailed: number[] = [];
+    
+    ids.forEach(id => {
+      const s = scores[id]?.score;
+      // Find the point to check if it's CCP
+      let point: AuditPoint | undefined;
+      for (const cat of categories) {
+        point = cat.points.find(p => p.id === id);
+        if (point) break;
+      }
+      
+      const weight = point?.isCCP && point?.ccpWeight ? point.ccpWeight : 2;
+      
+      if (s !== undefined && s >= 0) {
+        t += s * (weight / 2); // Scale score by weight ratio
+        if (point?.isCCP) {
+          ccpTotal += weight;
+          if (s === 2) ccpPassed += weight;
+          else ccpFailed.push(id);
+        }
+      }
+      m += weight;
+    });
+    
+    return { 
+      total: Math.round(t * 10) / 10, 
+      max: m, 
+      pct: m ? Math.round((t / m) * 100) : 0,
+      ccpPassed,
+      ccpTotal,
+      ccpFailed,
+      ccpPct: ccpTotal ? Math.round((ccpPassed / ccpTotal) * 100) : 100
+    };
   };
 
-  const shortlist = calc(shortlistIds);
-  const fullIds = auditCategories.filter(c => !c.isCritical).flatMap(c => c.points.map(p => p.id));
-  const full = calc(fullIds);
+  const shortlist = calc(getShortlistPoints(), auditCategories);
+  const fullIds = Array.from({length: 50}, (_, i) => i + 1);
+  const full = calc(fullIds, auditCategories);
+  
+  // CCP must pass = no failed CCPs (score < 2)
+  const ccpPassed = shortlist.ccpFailed.length === 0;
 
+  // Pass requires: 90%+ score AND all CCPs passed
   const canSubmit = formData.branchName.trim() !== '' && formData.auditorName.trim() !== '';
+  const canPass = shortlist.pct >= 90 && ccpPassed;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
+    
+    // Check CCP requirement
+    if (!ccpPassed) {
+      alert(`❌ Cannot pass: Failed ${shortlist.ccpFailed.length} Critical Control Point(s)\n\nFix CCP failures first before submitting.`);
+      return;
+    }
+    
     setIsSubmitting(true);
+    clearDraft(); // Clear saved draft after submit
     
     const actionItems = Object.entries(scores)
       .filter(([_, e]) => e && e.score !== undefined && e.score < 2 && e.score !== -1)
       .map(([id, e]) => ({ point: `Q${id}`, action: e?.note || 'Needs improvement', responsible: formData.auditorName, deadline: formData.date }));
 
-    const submission: AuditSubmission = {
-      id: Date.now().toString(), branchName: formData.branchName, branchNameAr: formData.branchName,
-      auditorName: formData.auditorName, auditorNameAr: formData.auditorName, date: formData.date,
-      scores, totalScore: shortlist.total + full.total, percentage: shortlist.pct, actionItems,
-      emailList: emailList.split(',').map(e => e.trim()).filter(e => e)
-    };
-    
     // Generate PDF
-    const blob = generatePDFBlob(submission);
+    let pdfBase64 = '';
+    let blob: Blob;
     
-    // Convert to base64
-    const reader = new FileReader();
-    const pdfBase64 = await new Promise<string>((resolve) => {
-      reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
-      reader.readAsDataURL(blob);
-    });
-    
-    // Download PDF
-    const a = document.createElement('a'); 
-    a.href = URL.createObjectURL(blob);
-    a.download = `Green_Audit_${formData.branchName.replace(/[^a-zA-Z0-9]/g, '_')}_${formData.date}.pdf`; 
-    a.click();
-    
-    // Send via API if emails provided
-    if (emailList.trim()) {
-      const emails = emailList.split(',').map(e => e.trim()).filter(e => e);
+    try {
+      const submission: AuditSubmission = {
+        id: Date.now().toString(), branchName: formData.branchName, branchNameAr: formData.branchName,
+        auditorName: formData.auditorName, auditorNameAr: formData.auditorName, date: formData.date,
+        scores, totalScore: shortlist.total + full.total, percentage: shortlist.pct, actionItems,
+        emailList: [], lang: lang
+      };
+      blob = generatePDFBlob(submission);
       
-      const actionText = actionItems.length > 0 
-        ? actionItems.map((a: any) => `• Q${a.point}: ${a.action}`).join('\n')
-        : '✅ All items passed!';
+      // Convert to base64
+      const reader = new FileReader();
+      pdfBase64 = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      
+      // Download PDF locally
+      const a = document.createElement('a'); 
+      a.href = URL.createObjectURL(blob);
+      a.download = `Green_Audit_${formData.branchName.replace(/[^a-zA-Z0-9]/g, '_')}_${formData.date}.pdf`; 
+      a.click();
+    } catch (pdfError: any) {
+      console.error('PDF Error:', pdfError);
+      // Continue without PDF if it fails
+    }
+    
+    // Text report (fallback if PDF fails)
+    const actionText = actionItems.length > 0 
+      ? actionItems.map((a: any) => `• ${a.point}: ${a.action}`).join('\n')
+      : '✅ All items passed!';
+    
+    const reportText = `Green Cafe Audit Report
+
+Branch: ${formData.branchName}
+Auditor: ${formData.auditorName}
+Date: ${formData.date}
+Score: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})
+
+Action Items:
+${actionText}`;
+
+    // Send via API - always send to default email
+    const emails = ['walid.sobhy@mmgunited.com'];
       
       for (const email of emails) {
         try {
@@ -95,7 +200,8 @@ export default function AuditForm() {
               date: formData.date,
               score: `${shortlist.pct}% (${shortlist.total}/${shortlist.max})`,
               actionItems: actionText,
-              pdfBase64
+              reportText: reportText,
+              pdfBase64: pdfBase64 || undefined
             })
           });
           
@@ -108,121 +214,206 @@ export default function AuditForm() {
           console.log('Email error:', e);
         }
       }
-      alert(`✅ Report sent to ${emails.length} email(s) with PDF!`);
-    }
+      alert(`✅ Report sent!`);
     
     setSubmitted(true); setIsSubmitting(false);
   };
 
   const isArabic = lang === 'ar';
   const t = (ar: string, en: string) => isArabic ? ar : en;
-  const categoriesToShow = auditCategories.filter(c => auditMode === 'full' ? !c.isCritical : c.isCritical);
+  // Shortlist = first 25 questions (ids 1-25)
+  // Full = all 50 questions
+  const shortlistIds = Array.from({length: 25}, (_, i) => i + 1);
+
+  // Get point details helper
+  const getPoint = (id: number): AuditPoint | undefined => {
+    for (const cat of auditCategories) {
+      const p = cat.points.find(p => p.id === id);
+      if (p) return p;
+    }
+    return undefined;
+  };
+  
+  const categoriesToShow = auditMode === 'shortlist'
+    ? auditCategories.map(cat => ({
+        ...cat,
+        points: cat.points.filter(p => shortlistIds.includes(p.id))
+      })).filter(cat => cat.points.length > 0)
+    : auditCategories;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Bright Header */}
-      <header className="bg-gradient-to-r from-green-900 via-green-800 to-emerald-900 text-white shadow-lg">
-        <div className="px-4 pt-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center p-1 shadow-md">
-                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">{t('نظام تدقيق الفروع', 'Branch Audit System')}</h1>
-                <p className="text-green-200 text-xs font-medium">{t('شركة جرين كافيه - مصر', 'Green Cafe Egypt')}</p>
+      {/* White Header - Clean & Bold */}
+      <header className="bg-white border-b-2 border-gray-200 shadow-lg">
+        <div className="px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            {/* Logo & Title */}
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <img src="/logo.png" alt="Logo" className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl shadow-md" />
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-black text-gray-900 tracking-wide">Green Cafe</h1>
+                <p className="text-xs sm:text-sm text-gray-500 font-semibold">{t('Branch Audit', 'تدقيق الفروع')}</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => setShowHelp(!showHelp)} className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-sm">?</button>
-              <button onClick={() => setLang(isArabic ? 'en' : 'ar')} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-bold">
+            
+            {/* Controls */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              <select 
+                value={auditMode} 
+                onChange={(e) => setAuditMode(e.target.value as 'shortlist' | 'full')}
+                className="px-2 sm:px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400 cursor-pointer"
+              >
+                <option value="shortlist" className="text-gray-800">{t('25', '25')}</option>
+                <option value="full" className="text-gray-800">{t('50', '50')}</option>
+              </select>
+              <button onClick={() => setLang(isArabic ? 'en' : 'ar')} className="px-2 sm:px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-bold text-gray-700 transition-colors">
                 {isArabic ? 'EN' : 'عربي'}
               </button>
+              <button onClick={() => setShowHelp(!showHelp)} className="w-8 h-8 sm:w-9 sm:h-9 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center text-sm font-bold text-gray-600 transition-colors">?</button>
             </div>
           </div>
         </div>
-        <div className="px-4 pb-4 mt-3">
-          <div className="flex justify-between text-xs font-medium text-green-200 mb-1">
-            <span>{t('تقدم التقييم', 'Audit Progress')}</span>
-            <span>{shortlist.pct}%</span>
+        
+        {/* Score Bar */}
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('Score', 'النتيجة')}</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${ccpPassed && shortlist.pct >= 90 ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}`}>
+                {shortlist.pct >= 90 && ccpPassed ? t('PASS', 'ناجح') : t('PENDING', 'قيد')}
+              </span>
+            </div>
+            <span className="text-2xl sm:text-3xl font-black text-gray-900">{shortlist.pct}%</span>
           </div>
-          <div className="h-2.5 bg-white/20 rounded-full overflow-hidden">
-            <div className={`h-full transition-all duration-500 ${shortlist.pct >= 90 ? 'bg-green-400' : shortlist.pct >= 70 ? 'bg-yellow-400' : 'bg-red-400'}`} style={{ width: `${shortlist.pct}%` }} />
+          
+          {/* Progress Bar with Glow */}
+          <div className="h-2.5 sm:h-3 bg-gray-100 rounded-full overflow-hidden shadow-inner">
+            <div 
+              className={`h-full transition-all duration-500 rounded-full ${shortlist.pct >= 90 && ccpPassed ? 'bg-green-500 shadow-lg shadow-green-500/50' : shortlist.pct >= 70 ? 'bg-yellow-500 shadow-lg shadow-yellow-500/50' : 'bg-red-500 shadow-lg shadow-red-500/50'}`} 
+              style={{ width: `${shortlist.pct}%` }} 
+            />
+          </div>
+          
+          {/* Quick Stats */}
+          <div className="flex justify-between mt-2 text-xs font-bold text-gray-500">
+            <span>{shortlist.total}/{shortlist.max} pts</span>
+            <span>CCP: {shortlist.ccpPct}%</span>
           </div>
         </div>
       </header>
 
       {showHelp && (
-        <div className="px-4 pt-4">
-          <div className="bg-green-50 rounded-xl p-3 border border-green-100">
-            <p className="text-sm text-green-800 font-medium"><b>1.</b> {t('املأ البيانات', 'Fill info')} → <b>2.</b> {t('25 سؤال', '25 Q')} → <b>3.</b> {t('90%+', '90%+')} → <b>4.</b> PDF</p>
+        <div className="px-3 sm:px-4 pt-3 sm:pt-4">
+          <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
+            {[
+              { n: '1', t: t('Fill', 'املأ'), c: 'bg-blue-500 shadow-lg shadow-blue-500/30' },
+              { n: '2', t: t('Score', 'نتيجة'), c: 'bg-purple-500 shadow-lg shadow-purple-500/30' },
+              { n: '3', t: '90%+ CCP', c: 'bg-green-500 shadow-lg shadow-green-500/30' },
+              { n: '4', t: 'PDF', c: 'bg-orange-500 shadow-lg shadow-orange-500/30' },
+            ].map((step, i) => (
+              <div key={i} className="flex items-center">
+                <span className={`${step.c} text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold`}>
+                  {step.n}. {step.t}
+                </span>
+                {i < 3 && <span className="text-gray-400 mx-1">→</span>}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      <main className="px-4 py-4 pb-24">
-        {submitted ? (
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">✅</span>
+      {/* Draft Restore Banner */}
+      {hasDraft && !submitted && (
+        <div className="px-3 sm:px-4 pt-3">
+          <div className="bg-amber-100 border-2 border-amber-300 rounded-xl sm:rounded-2xl p-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">📝</span>
+              <span className="text-sm font-bold text-amber-800">{t('Draft Saved', 'مسودة محفوظة')}</span>
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('تم!', 'Done!')}</h2>
-            <p className="text-gray-500 mb-4">{t('تم تحميل PDF', 'PDF downloaded')}</p>
-            <div className={`text-3xl font-bold ${shortlist.pct >= 90 ? 'text-green-600' : 'text-yellow-600'}`}>
+            <button onClick={clearDraft} className="text-xs font-bold text-amber-600 hover:text-amber-800 px-2 py-1">
+              {t('Clear', 'مسح')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <main className="px-3 sm:px-4 py-4 sm:py-5 pb-28">
+        {submitted ? (
+          <div className="bg-white rounded-3xl shadow-xl p-10 text-center border border-gray-100">
+            <div className="w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg">
+              <span className="text-5xl">✅</span>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('تم!', 'Done!')}</h2>
+            <p className="text-gray-500 mb-5">{t('تم تحميل PDF', 'PDF downloaded')}</p>
+            <div className={`text-4xl font-extrabold ${shortlist.pct >= 90 ? 'text-green-600' : 'text-yellow-600'}`}>
               {shortlist.pct}%
             </div>
           </div>
         ) : (
           <>
-            {/* Branch Info */}
-            <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
-              <div className="grid grid-cols-2 gap-3">
+            {/* Branch Info - Mobile Responsive */}
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-5 mb-4 sm:mb-5 border border-gray-100/80">
+              <h3 className="text-base sm:text-sm font-bold text-gray-800 mb-3 sm:mb-3 flex items-center gap-2">
+                <span className="w-1.5 h-5 sm:h-6 bg-green-600 rounded-full inline-block"></span>
+                {t('معلومات التفتيش', 'Inspection Details')}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t('الفرع', 'Branch')} *</label>
+                  <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('الفرع', 'Branch')} *</label>
                   <input type="text" value={formData.branchName} onChange={e => setFormData({...formData, branchName: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-900" placeholder="القاهرة - مصر" />
+                    className="w-full border-2 border-gray-200 rounded-xl px-3.5 py-3 text-sm font-semibold text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none" placeholder={t('Cairo - Egypt', 'القاهرة - مصر')} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t('المدقق', 'Auditor')} *</label>
+                  <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('المدقق', 'Auditor')} *</label>
                   <input type="text" value={formData.auditorName} onChange={e => setFormData({...formData, auditorName: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-900" placeholder="Ahmed" />
+                    className="w-full border-2 border-gray-200 rounded-xl px-3.5 py-3 text-sm font-semibold text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none" placeholder={t('Ahmed', 'أحمد')} />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t('التاريخ', 'Date')}</label>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('التاريخ', 'Date')}</label>
                   <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-900" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t('البريد', 'Email')}</label>
-                  <input type="email" value={emailList} onChange={e => setEmailList(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-900" placeholder="email@green.com" />
+                    className="w-full border-2 border-gray-200 rounded-xl px-3.5 py-3 text-sm font-semibold text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none" />
                 </div>
               </div>
             </div>
 
-            {/* Score Card */}
-            <div className="bg-white rounded-xl shadow-sm p-4 mb-4 flex justify-between items-center">
-              <div>
-                <p className="text-sm font-semibold text-gray-600">{t('النتيجة', 'Score')}</p>
-                <p className="text-2xl font-bold text-gray-900">{shortlist.total}/{shortlist.max}</p>
+            {/* Score Card with Glow */}
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 mb-4 sm:mb-5 flex justify-between items-center border border-gray-100/80 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5"></div>
+              <div className="relative">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('النتيجة', 'Score')}</p>
+                <p className="text-3xl sm:text-4xl font-black text-gray-900">{shortlist.total}<span className="text-gray-300 text-xl sm:text-2xl">/{shortlist.max}</span></p>
               </div>
-              <div className={`px-4 py-2 rounded-xl font-bold text-white ${shortlist.pct >= 90 ? 'bg-green-600' : shortlist.pct >= 70 ? 'bg-yellow-500' : 'bg-red-600'}`}>
+              <div className={`relative px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-extrabold text-xl sm:text-2xl shadow-lg ${shortlist.pct >= 90 ? 'bg-gradient-to-r from-green-600 to-emerald-600 shadow-green-500/30' : shortlist.pct >= 70 ? 'bg-gradient-to-r from-yellow-500 to-amber-500 shadow-yellow-500/30' : 'bg-gradient-to-r from-red-600 to-rose-600 shadow-red-500/30'}`}>
                 {shortlist.pct}%
               </div>
             </div>
 
             {auditMode === 'shortlist' && (
-              <div className={`rounded-xl p-3 mb-4 ${shortlist.pct >= 90 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                <span className={`font-semibold ${shortlist.pct >= 90 ? 'text-green-700' : 'text-red-700'}`}>
-                  {shortlist.pct >= 90 ? '🎉 ' + t('ممتاز!', 'Passed!') : '⚠️ ' + t('تحتاج 90%', 'Need 90%')}
-                </span>
+              <div className={`rounded-2xl p-4 mb-5 flex flex-col gap-2 shadow-sm ${shortlist.pct >= 90 && ccpPassed ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200' : 'bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200'}`}>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{shortlist.pct >= 90 && ccpPassed ? '🎉' : '⚠️'}</span>
+                  <span className={`font-bold text-sm ${shortlist.pct >= 90 && ccpPassed ? 'text-green-700' : 'text-red-700'}`}>
+                    {shortlist.pct >= 90 && ccpPassed ? t('ممتاز! تم اجتياز التفتيش', 'Excellent! Audit Passed') : t('تحتاج 90% للاجتياز', 'Need 90% to Pass')}
+                  </span>
+                </div>
+                {/* CCP Status */}
+                <div className="flex items-center gap-2 text-xs">
+                  <span className={`px-2 py-1 rounded font-bold ${ccpPassed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    CCP: {shortlist.ccpPct}%
+                  </span>
+                  {!ccpPassed && (
+                    <span className="text-red-600">
+                      {t('فشل', 'Failed')}: Q{shortlist.ccpFailed.join(', Q')}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Legend */}
-            <div className="flex gap-2 mb-4 text-xs font-medium flex-wrap">
+            {/* Legend - Mobile Responsive */}
+            <div className="flex gap-2 mb-4 sm:mb-5 text-xs font-bold flex-wrap justify-center sm:justify-start">
               {scoreButtons.map(b => (
-                <span key={b.s} className={`flex items-center gap-1 px-2 py-1 rounded ${b.c}`}>
+                <span key={b.s} className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg shadow-sm ${b.c}`}>
                   <b>{b.l}</b>
                 </span>
               ))}
@@ -231,55 +422,77 @@ export default function AuditForm() {
             {/* Categories */}
             {categoriesToShow.map(cat => {
               const catIds = cat.points.map(p => p.id);
-              const catCalc = calc(catIds);
+              const catCalc = calc(catIds, auditCategories);
               
-              // Green-themed colors for each category
               const catColors: Record<string, string> = {
-                'food-safety': 'from-red-500 to-red-600',
-                'customer': 'from-blue-500 to-blue-600', 
-                'customer-service': 'from-blue-500 to-blue-600',
-                'beverage': 'from-purple-500 to-purple-600',
-                'beverage-quality': 'from-purple-500 to-purple-600',
-                'operations': 'from-orange-500 to-orange-600',
-                'equipment': 'from-teal-500 to-teal-600',
-                'leadership': 'from-indigo-500 to-indigo-600',
+                'food-safety': 'from-red-600 to-red-700',
+                'customer': 'from-blue-600 to-blue-700', 
+                'customer-service': 'from-blue-600 to-blue-700',
+                'beverage': 'from-purple-600 to-purple-700',
+                'beverage-quality': 'from-purple-600 to-purple-700',
+                'operations': 'from-orange-600 to-orange-700',
+                'equipment': 'from-teal-600 to-teal-700',
+                'leadership': 'from-indigo-600 to-indigo-700',
               };
-              const colorClass = catColors[cat.id] || 'from-green-600 to-green-700';
+              const colorClass = catColors[cat.id] || 'from-green-700 to-green-800';
               
               return (
-                <div key={cat.id} className="bg-white rounded-xl shadow-sm mb-4 overflow-hidden">
-                  <div className={`bg-gradient-to-r ${colorClass} px-4 py-3 flex justify-between items-center`}>
+                <div key={cat.id} className="bg-white rounded-xl sm:rounded-2xl shadow-md mb-4 sm:mb-5 overflow-hidden border border-gray-100/80">
+                  <div className={`bg-gradient-to-r ${colorClass} px-3 sm:px-5 py-3 sm:py-4 flex justify-between items-center`}>
                     <div className="flex items-center gap-2">
-                      {cat.isCritical && <span className="px-2 py-0.5 bg-white/20 text-white text-xs font-bold rounded">{t('حرج', 'CRIT')}</span>}
-                      <span className="font-bold text-white text-sm">{isArabic ? cat.nameAr : cat.name}</span>
+                      <span className="font-bold text-white text-sm sm:text-base">{isArabic ? cat.nameAr : cat.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-white/80 text-xs font-medium">{cat.points.length} {t('سؤال', 'Q')}</span>
+                      <span className="text-white/80 text-xs font-medium">{cat.points.length} {t('Q', 'سؤال')}</span>
                       <span className="bg-white/20 px-2 py-0.5 rounded text-white text-xs font-bold">{catCalc.pct}%</span>
                     </div>
                   </div>
                   
-                  <div className="p-3 space-y-2">
+                  <div className="p-3 sm:p-4 space-y-3">
                     {cat.points.map(p => (
-                      <div key={p.id} className="border border-gray-100 rounded-lg p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-green-600 font-bold text-xs bg-green-50 px-1.5 py-0.5 rounded">#{p.id}</span>
-                          <span className="text-xs text-gray-500 font-medium">{isArabic ? p.categoryAr : p.category}</span>
+                      <div key={p.id} className={`border-2 rounded-xl p-4 hover:shadow-sm transition-all ${p.isCCP ? 'border-red-300 bg-red-50' : 'border-gray-100 hover:border-green-200'}`}>
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className={`text-white font-extrabold text-xs px-2 py-1 rounded-lg shadow-sm ${p.isCCP ? 'bg-red-600' : 'bg-green-600'}`}>#{p.id}</span>
+                          <span className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{isArabic ? p.categoryAr : p.category}</span>
+                          {p.isCCP && (
+                            <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold flex items-center gap-1">
+                              🔴 CCP
+                              <span className="font-normal text-red-600">(×{p.ccpWeight || 3})</span>
+                            </span>
+                          )}
+                          {p.requiresTemp && <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">🌡️ {p.tempMin}-{p.tempMax}°C</span>}
                         </div>
-                        <p className="text-sm font-bold text-gray-800 mb-2">{isArabic ? p.questionAr : p.question}</p>
-                        <div className="flex gap-1">
+                        <p className="text-sm font-medium text-gray-800 mb-2 leading-relaxed">{isArabic ? p.questionAr : p.question}</p>
+                        
+                        {/* CCP Critical Reason - Only show for CCP questions */}
+                        {p.isCCP && p.criticalReason && (
+                          <div className="text-xs text-gray-600 bg-red-50 rounded-lg p-2 mb-2 border-l-2 border-red-400">
+                            <span className="font-semibold text-red-600">⚠️ {t('Why Critical', 'لماذا حرج')}:</span> {p.criticalReason}
+                          </div>
+                        )}
+                        <div className="flex gap-1.5">
                           {scoreButtons.map(b => (
                             <button key={b.s} onClick={() => handleScore(p.id, b.s)}
-                              className={`w-9 h-9 rounded-lg text-xs font-bold ${scores[p.id]?.score === b.s ? b.c : 'bg-gray-100 text-gray-600'}`}>
+                              className={`w-10 h-10 rounded-xl text-xs font-bold transition-all ${scores[p.id]?.score === b.s ? b.c + ' shadow-lg scale-110' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                               {b.l}
                             </button>
                           ))}
                           <input type="file" accept="image/*" ref={el => { if (el) fileInputRefs.current[p.id] = el }}
                             onChange={e => e.target.files?.[0] && handlePhoto(p.id, e.target.files[0])} className="hidden" id={`ph${p.id}`} />
-                          <label htmlFor={`ph${p.id}`} className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm ${scores[p.id]?.photo ? 'bg-green-600 text-white' : 'bg-gray-100'}`}>📷</label>
+                          <label htmlFor={`ph${p.id}`} className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm cursor-pointer transition-all ${scores[p.id]?.photo ? 'bg-green-600 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'}`}>📷</label>
                         </div>
+                        {/* Temperature input for CCP questions */}
+                        {p.requiresTemp && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-xs font-bold text-blue-600">🌡️ Temp:</span>
+                            <input type="number" placeholder={p.tempMin ? `${p.tempMin}-${p.tempMax}°C` : '°C'} 
+                              value={scores[p.id]?.temperature ?? ''} 
+                              onChange={e => setScores(prev => ({ ...prev, [p.id]: { ...prev[p.id], temperature: e.target.value } }))}
+                              className="flex-1 border-2 border-blue-200 rounded-lg px-2 py-1 text-xs font-bold text-blue-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none" />
+                          </div>
+                        )}
                         <input type="text" placeholder={t('ملاحظات', 'Notes')} value={scores[p.id]?.note ?? ''} onChange={e => handleNote(p.id, e.target.value)}
-                          className="w-full mt-2 border border-gray-200 rounded px-2 py-1.5 text-xs font-medium text-gray-900" />
+                          className="w-full mt-3 border-2 border-gray-100 rounded-xl px-3 py-2 text-xs font-medium text-gray-900 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-all outline-none" />
                       </div>
                     ))}
                   </div>
@@ -288,22 +501,22 @@ export default function AuditForm() {
             })}
 
             {/* Actions */}
-            <div className="space-y-2 pt-2">
+            <div className="space-y-3 pt-3">
               {auditMode === 'shortlist' ? (
                 <>
-                  <button onClick={handleSubmit} disabled={!canSubmit || isSubmitting || shortlist.pct < 90}
-                    className="w-full py-4 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed">
-                    {isSubmitting ? '...' : shortlist.pct >= 90 ? t('تحميل PDF + خطة العمل', 'Download PDF + Plan') : t('تحتاج 90%', 'Need 90%')}
+                  <button onClick={handleSubmit} disabled={!canSubmit || isSubmitting || !canPass}
+                    className="w-full py-5 rounded-2xl font-extrabold text-white bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-800 hover:to-emerald-800 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all active:scale-[0.98]">
+                    {isSubmitting ? '...' : canPass ? t('تحميل PDF + خطة العمل', 'Download PDF + Plan') : !ccpPassed ? t('فشل CCP أولاً', 'Fix CCP First') : t('تحتاج 90%', 'Need 90%')}
                   </button>
                   {shortlist.max > 0 && shortlist.pct < 90 && (
-                    <button onClick={() => setAuditMode('full')} className="w-full py-3 rounded-xl font-medium text-white bg-orange-500 hover:bg-orange-600">
+                    <button onClick={() => setAuditMode('full')} className="w-full py-4 rounded-2xl font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-md hover:shadow-lg transition-all">
                       {t('أكمل 50 سؤال ←', 'Complete 50 Q ←')}
                     </button>
                   )}
                 </>
               ) : (
                 <button onClick={handleSubmit} disabled={!canSubmit || isSubmitting}
-                  className="w-full py-4 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-300">
+                  className="w-full py-5 rounded-2xl font-extrabold text-white bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-800 hover:to-emerald-800 disabled:from-gray-300 disabled:to-gray-400 shadow-lg hover:shadow-xl transition-all active:scale-[0.98]">
                   {isSubmitting ? '...' : t('تحميل PDF + خطة العمل', 'Download PDF + Plan')}
                 </button>
               )}
@@ -312,19 +525,17 @@ export default function AuditForm() {
         )}
       </main>
 
-      {/* Bright Footer */}
-      <footer className="bg-gradient-to-r from-green-900 via-green-800 to-emerald-900 text-white py-8 text-center shadow-lg">
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <img src="/logo.png" alt="Logo" className="h-10 rounded-lg shadow" />
-            <div className="text-left">
-              <span className="text-lg font-bold block">Green Cafe</span>
-              <span className="text-xs text-green-200">Egypt</span>
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-4 sm:py-6 text-center shadow-sm">
+        <div className="max-w-md mx-auto px-4">
+          <div className="flex items-center justify-center gap-2 mb-2 sm:mb-3">
+            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold">G</span>
             </div>
+            <span className="text-sm sm:text-base font-bold text-gray-700">Green Cafe Egypt</span>
           </div>
-          <div className="border-t border-green-600 pt-4 mt-4">
-            <p className="text-sm text-green-200 font-medium">© 2026 {t('جميع الحقوق محفوظة', 'All Rights Reserved')}</p>
-            <p className="text-xs text-green-300 mt-1">{t('نظام التدقيق الاحترافي', 'Professional Audit System')}</p>
+          <div className="border-t border-gray-100 pt-2 sm:pt-3 mt-2 sm:mt-3">
+            <p className="text-xs text-gray-400">© 2026 {t('All Rights Reserved', 'جميع الحقوق محفوظة')}</p>
           </div>
         </div>
       </footer>

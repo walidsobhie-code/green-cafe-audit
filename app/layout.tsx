@@ -1,8 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
-  title: "Green Cafe Audit System | نظام تدقيق جرين كافيه",
+  title: "Green Cafe Audit | تدقيق جرين كافيه",
   description: "50-Point Bilingual Audit Checklist for Green Cafe Branch Visits",
 };
 
@@ -13,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" dir="ltr">
-      <body className="antialiased">
+      <body className="antialiased bg-gray-100">
         {children}
       </body>
     </html>
