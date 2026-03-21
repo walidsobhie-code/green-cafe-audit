@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { auditCategories, getShortlistPoints, AuditPoint } from '@/lib/auditData';
+import { auditCategories, getShortlistPoints, AuditPoint, priorities, Priority } from '@/lib/auditData';
 import { generatePDFBlob, AuditSubmission } from '@/lib/pdfGenerator';
+import { saveAuditRecord, saveActionItem, STORES_LIST } from '@/lib/history';
 
 interface ScoreEntry { score: number; note: string; photo?: string; temperature?: string; }
 
@@ -18,10 +19,10 @@ interface SavedDraft {
 }
 
 const scoreButtons = [
-  { s: 2, l: '✓', c: 'bg-green-600 text-white' },
-  { s: 1, l: '△', c: 'bg-yellow-500 text-white' },
-  { s: 0, l: '✗', c: 'bg-red-600 text-white' },
-  { s: -1, l: 'N/A', c: 'bg-gray-300 text-gray-700' },
+  { s: 2, l: '✓', c: 'bg-gradient-to-br from-green-500 to-green-700 text-white' },
+  { s: 1, l: '△', c: 'bg-gradient-to-br from-yellow-500 to-amber-600 text-white' },
+  { s: 0, l: '✗', c: 'bg-gradient-to-br from-red-500 to-red-700 text-white' },
+  { s: -1, l: 'N', c: 'bg-gray-300 text-gray-600' },
 ];
 
 export default function AuditForm() {
@@ -75,9 +76,16 @@ export default function AuditForm() {
     r.readAsDataURL(file);
   };
 
-  // Enhanced calculation with CCP weighting
+  // Enhanced calculation with CCP & Priority weighting
   const calc = (ids: number[], categories: typeof auditCategories) => {
     let t = 0, m = 0, ccpPassed = 0, ccpTotal = 0, ccpFailed: number[] = [];
+    
+    // Priority breakdown
+    const priorityScores: Record<Priority, { total: number; max: number; passed: number }> = {
+      CCP: { total: 0, max: 0, passed: 0 },
+      HIGH: { total: 0, max: 0, passed: 0 },
+      STANDARD: { total: 0, max: 0, passed: 0 }
+    };
     
     ids.forEach(id => {
       const s = scores[id]?.score;
@@ -88,10 +96,13 @@ export default function AuditForm() {
         if (point) break;
       }
       
+      const priority = point?.priority || (point?.isCCP ? 'CCP' : 'STANDARD');
       const weight = point?.isCCP && point?.ccpWeight ? point.ccpWeight : 2;
       
       if (s !== undefined && s >= 0) {
-        t += s * (weight / 2); // Scale score by weight ratio
+        t += s * (weight / 2);
+        priorityScores[priority].total += s * (weight / 2);
+        
         if (point?.isCCP) {
           ccpTotal += weight;
           if (s === 2) ccpPassed += weight;
@@ -99,6 +110,8 @@ export default function AuditForm() {
         }
       }
       m += weight;
+      priorityScores[priority].max += weight;
+      if (s === 2) priorityScores[priority].passed += weight;
     });
     
     return { 
@@ -108,7 +121,12 @@ export default function AuditForm() {
       ccpPassed,
       ccpTotal,
       ccpFailed,
-      ccpPct: ccpTotal ? Math.round((ccpPassed / ccpTotal) * 100) : 100
+      ccpPct: ccpTotal ? Math.round((ccpPassed / ccpTotal) * 100) : 100,
+      priorityScores: {
+        CCP: { ...priorityScores.CCP, pct: priorityScores.CCP.max ? Math.round((priorityScores.CCP.total / priorityScores.CCP.max) * 100) : 0 },
+        HIGH: { ...priorityScores.HIGH, pct: priorityScores.HIGH.max ? Math.round((priorityScores.HIGH.total / priorityScores.HIGH.max) * 100) : 0 },
+        STANDARD: { ...priorityScores.STANDARD, pct: priorityScores.STANDARD.max ? Math.round((priorityScores.STANDARD.total / priorityScores.STANDARD.max) * 100) : 0 }
+      }
     };
   };
 
@@ -216,6 +234,49 @@ ${actionText}`;
       }
       alert(`✅ Report sent!`);
     
+    // Save to history
+    const failedItems = Object.entries(scores)
+      .filter(([_, e]) => e && e.score !== undefined && e.score < 2 && e.score >= 0)
+      .map(([id, e]) => {
+        const point = getPoint(parseInt(id as string));
+        return {
+          questionId: parseInt(id as string),
+          question: point ? (isArabic ? point.questionAr : point.question) : `Q${id}`,
+          branchName: formData.branchName,
+          assignedTo: formData.auditorName,
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: 'pending' as const
+        };
+      });
+    
+    // Save failed items as action items
+    failedItems.forEach(item => saveActionItem(item));
+    
+    // Save audit record to history
+    const categoryData = categoriesToShow.map(cat => {
+      const catIds = cat.points.map(p => p.id);
+      const catCalc = calc(catIds, auditCategories);
+      return {
+        name: isArabic ? cat.nameAr : cat.name,
+        score: catCalc.total,
+        maxScore: catCalc.max,
+        percentage: catCalc.pct
+      };
+    });
+    
+    saveAuditRecord({
+      branchName: formData.branchName,
+      auditorName: formData.auditorName,
+      date: formData.date,
+      score: shortlist.total,
+      percentage: shortlist.pct,
+      ccpPercentage: shortlist.ccpPct,
+      passed: canPass,
+      auditMode: auditMode,
+      categories: categoryData,
+      actionItems: [] // Action items saved separately via saveActionItem
+    });
+    
     setSubmitted(true); setIsSubmitting(false);
   };
 
@@ -258,6 +319,12 @@ ${actionText}`;
             
             {/* Controls */}
             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              <a 
+                href="/dashboard"
+                className="px-2 sm:px-3 py-1.5 bg-green-100 hover:bg-green-200 rounded-lg text-xs font-bold text-green-700 transition-colors"
+              >
+                📊 {t('Dashboard', 'لوحة')}
+              </a>
               <select 
                 value={auditMode} 
                 onChange={(e) => setAuditMode(e.target.value as 'shortlist' | 'full')}
@@ -294,10 +361,25 @@ ${actionText}`;
             />
           </div>
           
-          {/* Quick Stats */}
+          {/* Priority Breakdown */}
           <div className="flex justify-between mt-2 text-xs font-bold text-gray-500">
             <span>{shortlist.total}/{shortlist.max} pts</span>
             <span>CCP: {shortlist.ccpPct}%</span>
+          </div>
+          {/* Priority Scores */}
+          <div className="flex gap-2 mt-2">
+            <div className="flex-1 bg-red-50 border border-red-200 rounded-lg px-2 py-1 text-center">
+              <div className="text-[10px] text-red-600 font-bold">CCP</div>
+              <div className="text-sm font-black text-red-700">{shortlist.priorityScores.CCP.pct}%</div>
+            </div>
+            <div className="flex-1 bg-yellow-50 border border-yellow-200 rounded-lg px-2 py-1 text-center">
+              <div className="text-[10px] text-yellow-600 font-bold">HIGH</div>
+              <div className="text-sm font-black text-yellow-700">{shortlist.priorityScores.HIGH.pct}%</div>
+            </div>
+            <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-center">
+              <div className="text-[10px] text-gray-600 font-bold">STD</div>
+              <div className="text-sm font-black text-gray-700">{shortlist.priorityScores.STANDARD.pct}%</div>
+            </div>
           </div>
         </div>
       </header>
@@ -360,8 +442,19 @@ ${actionText}`;
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('الفرع', 'Branch')} *</label>
-                  <input type="text" value={formData.branchName} onChange={e => setFormData({...formData, branchName: e.target.value})}
-                    className="w-full border-2 border-gray-200 rounded-xl px-3.5 py-3 text-sm font-semibold text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none" placeholder={t('Cairo - Egypt', 'القاهرة - مصر')} />
+                  <input 
+                    list="stores-list" 
+                    type="text" 
+                    value={formData.branchName} 
+                    onChange={e => setFormData({...formData, branchName: e.target.value})}
+                    className="w-full border-2 border-gray-200 rounded-xl px-3.5 py-3 text-sm font-semibold text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none" 
+                    placeholder={t('Select or type branch', 'اختر أو اكتب الفرع')}
+                  />
+                  <datalist id="stores-list">
+                    {STORES_LIST.map(store => (
+                      <option key={store} value={store} />
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('المدقق', 'Auditor')} *</label>
@@ -410,89 +503,168 @@ ${actionText}`;
               </div>
             )}
 
-            {/* Legend - Mobile Responsive */}
-            <div className="flex gap-2 mb-4 sm:mb-5 text-xs font-bold flex-wrap justify-center sm:justify-start">
+            {/* Legend - Enhanced */}
+            <div className="flex gap-2 mb-5 text-xs font-bold flex-wrap justify-center sm:justify-start">
               {scoreButtons.map(b => (
-                <span key={b.s} className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg shadow-sm ${b.c}`}>
-                  <b>{b.l}</b>
+                <span key={b.s} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl shadow-md ${b.c}`}>
+                  <span className="text-sm">{b.l}</span>
+                  <span className="text-[10px] opacity-80">{b.s === 2 ? 'Full' : b.s === 1 ? 'Partial' : b.s === 0 ? 'Fail' : 'N/A'}</span>
                 </span>
               ))}
             </div>
 
-            {/* Categories */}
+            {/* Categories with Icons */}
             {categoriesToShow.map(cat => {
               const catIds = cat.points.map(p => p.id);
               const catCalc = calc(catIds, auditCategories);
               
-              const catColors: Record<string, string> = {
-                'food-safety': 'from-red-600 to-red-700',
-                'customer': 'from-blue-600 to-blue-700', 
-                'customer-service': 'from-blue-600 to-blue-700',
-                'beverage': 'from-purple-600 to-purple-700',
-                'beverage-quality': 'from-purple-600 to-purple-700',
-                'operations': 'from-orange-600 to-orange-700',
-                'equipment': 'from-teal-600 to-teal-700',
-                'leadership': 'from-indigo-600 to-indigo-700',
+              const catConfig: Record<string, { icon: string; gradient: string; light: string }> = {
+                'food-safety': { icon: '🍎', gradient: 'from-red-600 to-red-700', light: 'bg-red-50' },
+                'customer-service': { icon: '😊', gradient: 'from-blue-600 to-blue-700', light: 'bg-blue-50' },
+                'customer': { icon: '😊', gradient: 'from-blue-600 to-blue-700', light: 'bg-blue-50' },
+                'beverage-quality': { icon: '☕', gradient: 'from-purple-600 to-purple-700', light: 'bg-purple-50' },
+                'beverage': { icon: '☕', gradient: 'from-purple-600 to-purple-700', light: 'bg-purple-50' },
+                'operations': { icon: '⚙️', gradient: 'from-orange-600 to-orange-700', light: 'bg-orange-50' },
+                'equipment': { icon: '🔧', gradient: 'from-teal-600 to-teal-700', light: 'bg-teal-50' },
+                'food-safety-ext': { icon: '🍎', gradient: 'from-red-600 to-red-700', light: 'bg-red-50' },
+                'customer-ext': { icon: '😊', gradient: 'from-blue-600 to-blue-700', light: 'bg-blue-50' },
+                'beverage-ext': { icon: '☕', gradient: 'from-purple-600 to-purple-700', light: 'bg-purple-50' },
+                'operations-ext': { icon: '⚙️', gradient: 'from-orange-600 to-orange-700', light: 'bg-orange-50' },
               };
-              const colorClass = catColors[cat.id] || 'from-green-700 to-green-800';
+              const config = catConfig[cat.id] || { icon: '📋', gradient: 'from-green-700 to-green-800', light: 'bg-green-50' };
               
               return (
-                <div key={cat.id} className="bg-white rounded-xl sm:rounded-2xl shadow-md mb-4 sm:mb-5 overflow-hidden border border-gray-100/80">
-                  <div className={`bg-gradient-to-r ${colorClass} px-3 sm:px-5 py-3 sm:py-4 flex justify-between items-center`}>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-white text-sm sm:text-base">{isArabic ? cat.nameAr : cat.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-white/80 text-xs font-medium">{cat.points.length} {t('Q', 'سؤال')}</span>
-                      <span className="bg-white/20 px-2 py-0.5 rounded text-white text-xs font-bold">{catCalc.pct}%</span>
+                <div key={cat.id} className="bg-white rounded-2xl shadow-lg mb-5 overflow-hidden border border-gray-100">
+                  {/* Category Header with Progress */}
+                  <div className={`bg-gradient-to-r ${config.gradient} px-4 py-3`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{config.icon}</span>
+                        <div>
+                          <h3 className="font-bold text-white text-base">{isArabic ? cat.nameAr : cat.name}</h3>
+                          <p className="text-white/70 text-xs">{cat.points.length} questions</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-black text-white">{catCalc.pct}%</div>
+                        <div className="h-1.5 w-20 bg-white/30 rounded-full overflow-hidden">
+                          <div className="h-full bg-white rounded-full transition-all duration-500" style={{ width: `${catCalc.pct}%` }} />
+                        </div>
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="p-3 sm:p-4 space-y-3">
+                  <div className="p-4 space-y-4">
                     {cat.points.map(p => (
-                      <div key={p.id} className={`border-2 rounded-xl p-4 hover:shadow-sm transition-all ${p.isCCP ? 'border-red-300 bg-red-50' : 'border-gray-100 hover:border-green-200'}`}>
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span className={`text-white font-extrabold text-xs px-2 py-1 rounded-lg shadow-sm ${p.isCCP ? 'bg-red-600' : 'bg-green-600'}`}>#{p.id}</span>
-                          <span className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{isArabic ? p.categoryAr : p.category}</span>
-                          {p.isCCP && (
-                            <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold flex items-center gap-1">
-                              🔴 CCP
-                              <span className="font-normal text-red-600">(×{p.ccpWeight || 3})</span>
-                            </span>
+                      <div key={p.id} className={`border-2 rounded-2xl p-4 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5 ${p.isCCP ? 'border-red-300 bg-red-50/50' : 'border-gray-100 hover:border-green-300'}`}>
+                        {/* Question Header with Big Number */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-white text-lg shadow-md ${p.isCCP ? 'bg-gradient-to-br from-red-500 to-red-700' : 'bg-gradient-to-br from-green-500 to-green-700'}`}>
+                              {p.id}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {p.isCCP && (
+                                  <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                                    🔴 CCP <span className="text-red-500">(×{p.ccpWeight || 3})</span>
+                                  </span>
+                                )}
+                                {p.requiresTemp && (
+                                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                                    🌡️ {p.tempMin}-{p.tempMax}°C
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1">
+                                {isArabic ? p.categoryAr : p.category}
+                              </p>
+                            </div>
+                          </div>
+                          {/* Score Indicator */}
+                          {scores[p.id]?.score !== undefined && (
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-white shadow-md ${
+                              scores[p.id]?.score === 2 ? 'bg-gradient-to-br from-green-500 to-green-700' :
+                              scores[p.id]?.score === 1 ? 'bg-gradient-to-br from-yellow-500 to-amber-600' :
+                              scores[p.id]?.score === 0 ? 'bg-gradient-to-br from-red-500 to-red-700' :
+                              'bg-gray-300'
+                            }`}>
+                              {scores[p.id]?.score === 2 ? '✓' : scores[p.id]?.score === 1 ? '△' : scores[p.id]?.score === 0 ? '✗' : '?'}
+                            </div>
                           )}
-                          {p.requiresTemp && <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">🌡️ {p.tempMin}-{p.tempMax}°C</span>}
                         </div>
-                        <p className="text-sm font-medium text-gray-800 mb-2 leading-relaxed">{isArabic ? p.questionAr : p.question}</p>
                         
-                        {/* CCP Critical Reason - Only show for CCP questions */}
+                        {/* Question Text */}
+                        <p className="text-sm font-semibold text-gray-800 leading-relaxed mb-3">
+                          {isArabic ? p.questionAr : p.question}
+                        </p>
+                        
+                        {/* CCP Critical Reason - Collapsible */}
                         {p.isCCP && p.criticalReason && (
-                          <div className="text-xs text-gray-600 bg-red-50 rounded-lg p-2 mb-2 border-l-2 border-red-400">
-                            <span className="font-semibold text-red-600">⚠️ {t('Why Critical', 'لماذا حرج')}:</span> {p.criticalReason}
+                          <div className="text-xs text-gray-600 bg-red-100 rounded-xl p-3 mb-3 border-l-4 border-red-500">
+                            <span className="font-bold text-red-700">⚠️ {t('Critical', 'حرج')}:</span> {p.criticalReason}
                           </div>
                         )}
-                        <div className="flex gap-1.5">
+                        
+                        {/* Score Buttons - Compact */}
+                        <div className="flex items-center gap-1.5 mb-3">
                           {scoreButtons.map(b => (
-                            <button key={b.s} onClick={() => handleScore(p.id, b.s)}
-                              className={`w-10 h-10 rounded-xl text-xs font-bold transition-all ${scores[p.id]?.score === b.s ? b.c + ' shadow-lg scale-110' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                            <button 
+                              key={b.s} 
+                              onClick={() => handleScore(p.id, b.s)}
+                              className={`w-9 h-9 rounded-lg font-bold text-xs transition-all duration-200 ${
+                                scores[p.id]?.score === b.s 
+                                  ? `${b.c} shadow-lg scale-105 ring-2 ring-offset-1 ring-current` 
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'
+                              }`}
+                            >
                               {b.l}
                             </button>
                           ))}
-                          <input type="file" accept="image/*" ref={el => { if (el) fileInputRefs.current[p.id] = el }}
-                            onChange={e => e.target.files?.[0] && handlePhoto(p.id, e.target.files[0])} className="hidden" id={`ph${p.id}`} />
-                          <label htmlFor={`ph${p.id}`} className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm cursor-pointer transition-all ${scores[p.id]?.photo ? 'bg-green-600 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'}`}>📷</label>
+                          
+                          {/* Photo Button with Preview */}
+                          <div className="relative">
+                            <input type="file" accept="image/*" ref={el => { if (el) fileInputRefs.current[p.id] = el }}
+                              onChange={e => e.target.files?.[0] && handlePhoto(p.id, e.target.files[0])} className="hidden" id={`ph${p.id}`} />
+                            <label htmlFor={`ph${p.id}`} className={`w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110 ${
+                              scores[p.id]?.photo ? 'bg-gradient-to-br from-green-500 to-green-700 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'
+                            }`}>
+                              {scores[p.id]?.photo ? (
+                                <div className="w-8 h-8 rounded-lg overflow-hidden">
+                                  <img src={scores[p.id]?.photo} alt="" className="w-full h-full object-cover" />
+                                </div>
+                              ) : '📷'}
+                            </label>
+                          </div>
                         </div>
-                        {/* Temperature input for CCP questions */}
+                        
+                        {/* Temperature Input for CCP */}
                         {p.requiresTemp && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="text-xs font-bold text-blue-600">🌡️ Temp:</span>
-                            <input type="number" placeholder={p.tempMin ? `${p.tempMin}-${p.tempMax}°C` : '°C'} 
+                          <div className="flex items-center gap-2 mb-3 p-2 bg-blue-50 rounded-xl border border-blue-200">
+                            <span className="text-sm">🌡️</span>
+                            <input type="number" 
+                              placeholder={`${p.tempMin}-${p.tempMax}°C`} 
                               value={scores[p.id]?.temperature ?? ''} 
                               onChange={e => setScores(prev => ({ ...prev, [p.id]: { ...prev[p.id], temperature: e.target.value } }))}
-                              className="flex-1 border-2 border-blue-200 rounded-lg px-2 py-1 text-xs font-bold text-blue-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none" />
+                              className="flex-1 bg-white border-2 border-blue-200 rounded-lg px-3 py-2 text-sm font-bold text-blue-700 focus:border-blue-400 outline-none" />
                           </div>
                         )}
-                        <input type="text" placeholder={t('ملاحظات', 'Notes')} value={scores[p.id]?.note ?? ''} onChange={e => handleNote(p.id, e.target.value)}
-                          className="w-full mt-3 border-2 border-gray-100 rounded-xl px-3 py-2 text-xs font-medium text-gray-900 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-all outline-none" />
+                        
+                        {/* Notes Field - Expandable */}
+                        <div className="relative">
+                          <textarea 
+                            placeholder={t('Add notes...', 'أضف ملاحظات...')} 
+                            value={scores[p.id]?.note ?? ''} 
+                            onChange={e => handleNote(p.id, e.target.value)}
+                            rows={2}
+                            className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-3 py-2 text-sm text-gray-700 focus:border-green-400 outline-none resize-none transition-all"
+                          />
+                          {scores[p.id]?.note && (
+                            <span className="absolute bottom-2 right-2 text-[10px] text-gray-400">
+                              {scores[p.id]?.note.length}/200
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
