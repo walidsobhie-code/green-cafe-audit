@@ -417,23 +417,32 @@ ${actionText}`;
           </div>
         </div>
         
-        {/* Category Breakdown - 3D with real scores */}
+        {/* Category Breakdown - 3D circular with real scores */}
         <div className="px-3 pb-3">
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-4 gap-2">
             {[
               { id: 'safety', label: 'السلامة', color: 'red' },
               { id: 'operations', label: 'العمليات', color: 'orange' },
               { id: 'service', label: 'الخدمة', color: 'blue' },
               { id: 'hygiene', label: 'النظافة', color: 'green' },
             ].map(cat => {
-              const catData = shortlist.categoryScores?.[cat.id] || { total: 0, max: 0, pct: 0 };
-              const pct = catData.pct || 0;
+              const catData = (shortlist.categoryScores as Record<string, {total: number, max: number, pct: number}>)?.[cat.id] || { total: 0, max: 0, pct: 0 };
+              const pct = catData?.pct || 0;
               const isPass = pct >= 90;
               const isWarn = pct >= 70 && pct < 90;
               return (
                 <div key={cat.id} className={`relative text-center py-2 rounded-xl shadow-lg border-b-4 ${isPass ? 'bg-gradient-to-b from-green-50 to-green-100 border-green-600' : isWarn ? 'bg-gradient-to-b from-yellow-50 to-yellow-100 border-yellow-600' : 'bg-gradient-to-b from-red-50 to-red-100 border-red-600'}`}>
                   <div className="text-[9px] font-bold text-gray-500 uppercase">{cat.label}</div>
-                  <div className={`text-lg font-black ${isPass ? 'text-green-600' : isWarn ? 'text-yellow-600' : 'text-red-600'}`}>{pct}%</div>
+                  {/* Mini circular progress */}
+                  <div className="relative w-10 h-10 mx-auto mt-1">
+                    <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
+                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" className="text-gray-200" />
+                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${pct}, 100`} strokeLinecap="round" className={isPass ? 'text-green-500' : isWarn ? 'text-yellow-500' : 'text-red-500'} />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className={`text-xs font-black ${isPass ? 'text-green-600' : isWarn ? 'text-yellow-600' : 'text-red-600'}`}>{pct}%</span>
+                    </div>
+                  </div>
                 </div>
               );
             })}
