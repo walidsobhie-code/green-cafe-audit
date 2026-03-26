@@ -392,21 +392,26 @@ ${actionText}`;
           </div>
         </div>
         
-        {/* Priority Cards */}
+        {/* Category Scores */}
         <div className="px-3 pb-3">
-          <div className="grid grid-cols-3 gap-2">
-            <div className={`text-center py-2 rounded-lg ${shortlist.priorityScores.CCP.pct >= 90 ? 'bg-green-100 border border-green-300' : 'bg-red-100 border border-red-300'}`}>
-              <div className="text-[10px] font-bold text-gray-500">CCP</div>
-              <div className={`text-lg font-black ${shortlist.priorityScores.CCP.pct >= 90 ? 'text-green-600' : 'text-red-600'}`}>{shortlist.priorityScores.CCP.pct}%</div>
-            </div>
-            <div className={`text-center py-2 rounded-lg ${shortlist.priorityScores.HIGH.pct >= 70 ? 'bg-green-100 border border-green-300' : 'bg-yellow-100 border border-yellow-300'}`}>
-              <div className="text-[10px] font-bold text-gray-500">HIGH</div>
-              <div className={`text-lg font-black ${shortlist.priorityScores.HIGH.pct >= 70 ? 'text-green-600' : 'text-yellow-600'}`}>{shortlist.priorityScores.HIGH.pct}%</div>
-            </div>
-            <div className={`text-center py-2 rounded-lg ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'bg-green-100 border border-green-300' : 'bg-gray-100 border border-gray-300'}`}>
-              <div className="text-[10px] font-bold text-gray-500">STD</div>
-              <div className={`text-lg font-black ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'text-green-600' : 'text-gray-600'}`}>{shortlist.priorityScores.STANDARD.pct}%</div>
-            </div>
+          <div className="grid grid-cols-4 gap-1.5">
+            {[
+              { id: 'safety', label: 'السلامة', en: 'Safety', color: 'red' },
+              { id: 'operations', label: 'العمليات', en: 'Operations', color: 'orange' },
+              { id: 'service', label: 'الخدمة', en: 'Service', color: 'blue' },
+              { id: 'hygiene', label: 'النظافة', en: 'Hygiene', color: 'green' },
+            ].map(cat => {
+              const catData = shortlist.categoryScores?.[cat.id] || { total: 0, max: 0, pct: 0 };
+              const pct = catData.pct || (catData.max ? Math.round((catData.total / catData.max) * 100) : 0);
+              const isPass = pct >= 90;
+              const isWarn = pct >= 70 && pct < 90;
+              return (
+                <div key={cat.id} className={`text-center py-1.5 px-1 rounded-lg ${isPass ? 'bg-green-100 border-2 border-green-400' : isWarn ? 'bg-yellow-100 border-2 border-yellow-400' : 'bg-red-100 border-2 border-red-300'}`}>
+                  <div className="text-[8px] font-bold text-gray-500 uppercase">{t(cat.en, cat.label)}</div>
+                  <div className={`text-base font-black ${isPass ? 'text-green-600' : isWarn ? 'text-yellow-600' : 'text-red-600'}`}>{pct}%</div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </header>
