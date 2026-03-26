@@ -392,20 +392,24 @@ ${actionText}`;
           </div>
         </div>
         
-        {/* Priority Scores - 3D */}
+        {/* Category Breakdown - 3D */}
         <div className="px-3 pb-3">
-          <div className="grid grid-cols-3 gap-2">
-            <div className={`relative text-center py-2 rounded-xl shadow-lg border-b-4 ${shortlist.priorityScores.CCP.pct >= 90 ? 'bg-gradient-to-b from-green-50 to-green-100 border-green-600' : 'bg-gradient-to-b from-red-50 to-red-100 border-red-600'}`}>
-              <div className="text-[10px] font-bold text-gray-500">CCP</div>
-              <div className={`text-xl font-black ${shortlist.priorityScores.CCP.pct >= 90 ? 'text-green-600' : 'text-red-600'}`}>{shortlist.priorityScores.CCP.pct}%</div>
+          <div className="grid grid-cols-4 gap-1.5">
+            <div className="relative text-center py-2 rounded-xl shadow-lg border-b-4 bg-gradient-to-b from-red-50 to-red-100 border-red-600">
+              <div className="text-[9px] font-bold text-gray-500 uppercase">السلامة</div>
+              <div className="text-lg font-black text-red-600">--%</div>
             </div>
-            <div className={`relative text-center py-2 rounded-xl shadow-lg border-b-4 ${shortlist.priorityScores.HIGH.pct >= 70 ? 'bg-gradient-to-b from-green-50 to-green-100 border-green-600' : 'bg-gradient-to-b from-yellow-50 to-yellow-100 border-yellow-600'}`}>
-              <div className="text-[10px] font-bold text-gray-500">HIGH</div>
-              <div className={`text-xl font-black ${shortlist.priorityScores.HIGH.pct >= 70 ? 'text-green-600' : 'text-yellow-600'}`}>{shortlist.priorityScores.HIGH.pct}%</div>
+            <div className="relative text-center py-2 rounded-xl shadow-lg border-b-4 bg-gradient-to-b from-orange-50 to-orange-100 border-orange-600">
+              <div className="text-[9px] font-bold text-gray-500 uppercase">العمليات</div>
+              <div className="text-lg font-black text-orange-600">--%</div>
             </div>
-            <div className={`relative text-center py-2 rounded-xl shadow-lg border-b-4 ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'bg-gradient-to-b from-green-50 to-green-100 border-green-600' : 'bg-gradient-to-b from-gray-50 to-gray-100 border-gray-500'}`}>
-              <div className="text-[10px] font-bold text-gray-500">STD</div>
-              <div className={`text-xl font-black ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'text-green-600' : 'text-gray-600'}`}>{shortlist.priorityScores.STANDARD.pct}%</div>
+            <div className="relative text-center py-2 rounded-xl shadow-lg border-b-4 bg-gradient-to-b from-blue-50 to-blue-100 border-blue-600">
+              <div className="text-[9px] font-bold text-gray-500 uppercase">الخدمة</div>
+              <div className="text-lg font-black text-blue-600">--%</div>
+            </div>
+            <div className="relative text-center py-2 rounded-xl shadow-lg border-b-4 bg-gradient-to-b from-green-50 to-green-100 border-green-600">
+              <div className="text-[9px] font-bold text-gray-500 uppercase">النظافة</div>
+              <div className="text-lg font-black text-green-600">--%</div>
             </div>
           </div>
         </div>
