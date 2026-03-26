@@ -2,19 +2,25 @@
 
 :root {
   /* Green Cafe Theme Colors */
-  --background: #fafaf8;
+  --background: #f0fdf4;
   --foreground: #1a2e1a;
-  --primary: #2d5a27;
-  --primary-light: #4a7c43;
-  --primary-dark: #1e3d1a;
-  --accent: #8bc34a;
-  --accent-light: #aed581;
-  --success: #4caf50;
-  --warning: #ff9800;
-  --danger: #f44336;
+  --primary: #16a34a;
+  --primary-light: #4ade80;
+  --primary-dark: #15803d;
+  --accent: #84cc16;
+  --accent-light: #a3e635;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
   --card: #ffffff;
-  --card-border: #e8e8e0;
-  --muted: #757575;
+  --card-border: #e2e8f0;
+  --muted: #64748b;
+  
+  /* Enhanced shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
 @theme inline {
@@ -101,13 +107,39 @@ button:disabled {
 .audit-card {
   background: var(--card);
   border: 1px solid var(--card-border);
-  border-radius: 12px;
-  transition: all 0.2s ease;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .audit-card:hover {
   border-color: var(--primary-light);
-  box-shadow: 0 4px 12px rgba(45, 90, 39, 0.1);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* Glassmorphism card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Gradient backgrounds */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+}
+
+.gradient-success {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.gradient-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.gradient-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
 }
 
 /* Score button animations */
@@ -163,6 +195,39 @@ button:disabled {
 
 .success-animation {
   animation: success-pulse 0.5s ease;
+}
+
+/* Float animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Shimmer loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--card-border) 25%, var(--card) 50%, var(--card-border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Score pop animation */
+@keyframes score-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.score-pop {
+  animation: score-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Print styles */

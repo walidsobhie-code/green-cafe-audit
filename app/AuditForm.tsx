@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { auditCategories, getShortlistPoints, AuditPoint, priorities, Priority } from '@/lib/auditData';
+import { auditCategories, getShortlistPoints, getFullIds, AuditPoint, priorities, Priority } from '@/lib/auditData';
 import { generatePDFBlob, AuditSubmission } from '@/lib/pdfGenerator';
 import { saveAuditRecord, saveActionItem, STORES_LIST } from '@/lib/history';
+import { Toaster, toast } from 'sonner';
+import { Search, Copy, Check } from 'lucide-react';
 
 interface ScoreEntry { score: number; note: string; photo?: string; temperature?: string; }
 
@@ -28,6 +30,9 @@ const scoreButtons = [
 export default function AuditForm() {
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [showHelp, setShowHelp] = useState(true);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [copied, setCopied] = useState(false);
   const [auditMode, setAuditMode] = useState<'shortlist' | 'full'>('shortlist');
   const [formData, setFormData] = useState({ branchName: '', auditorName: '', date: new Date().toISOString().split('T')[0] });
   const [scores, setScores] = useState<Record<number, ScoreEntry>>({});
@@ -53,6 +58,8 @@ export default function AuditForm() {
       }
     } catch (e) { console.log('No draft found'); }
   }, []);
+
+  // Filter questions by search - will be applied after categoriesToShow is defined
 
   // Auto-save: Save on changes
   useEffect(() => {
@@ -131,7 +138,7 @@ export default function AuditForm() {
   };
 
   const shortlist = calc(getShortlistPoints(), auditCategories);
-  const fullIds = Array.from({length: 50}, (_, i) => i + 1);
+  const fullIds = getFullIds();
   const full = calc(fullIds, auditCategories);
   
   // CCP must pass = no failed CCPs (score < 2)
@@ -284,7 +291,7 @@ ${actionText}`;
   const t = (ar: string, en: string) => isArabic ? ar : en;
   // Shortlist = first 25 questions (ids 1-25)
   // Full = all 50 questions
-  const shortlistIds = Array.from({length: 25}, (_, i) => i + 1);
+  const shortlistIds = getShortlistPoints();
 
   // Get point details helper
   const getPoint = (id: number): AuditPoint | undefined => {
@@ -295,15 +302,35 @@ ${actionText}`;
     return undefined;
   };
   
-  const categoriesToShow = auditMode === 'shortlist'
-    ? auditCategories.map(cat => ({
+  // Get all points sorted by ID - single flat list 1,2,3...
+  const allPointsSorted = (auditMode === 'shortlist'
+    ? auditCategories.filter(cat => !cat.shortlistOnly)
+    : auditCategories
+  ).flatMap(cat => cat.points).sort((a, b) => a.id - b.id);
+  
+  // Single category for simple numbering
+  const categoriesToShow = [{
+    id: 'all',
+    name: '📋 All Questions',
+    nameAr: '📋 جميع الأسئلة',
+    priority: 'STANDARD' as Priority,
+    points: allPointsSorted
+  }];
+
+  // Filter questions by search
+  const filteredCategories = showSearch && searchQuery
+    ? categoriesToShow.map(cat => ({
         ...cat,
-        points: cat.points.filter(p => shortlistIds.includes(p.id))
+        points: cat.points.filter(p => 
+          p.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.questionAr.includes(searchQuery)
+        )
       })).filter(cat => cat.points.length > 0)
-    : auditCategories;
+    : categoriesToShow;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 transition-colors">
+      <Toaster position="top-center" richColors />
       {/* White Header - Clean & Bold */}
       <header className="bg-white border-b-2 border-gray-200 shadow-lg">
         <div className="px-3 sm:px-4 py-3 sm:py-4">
@@ -312,13 +339,20 @@ ${actionText}`;
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <img src="/logo.png" alt="Logo" className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl shadow-md" />
               <div className="min-w-0">
-                <h1 className="text-lg sm:text-xl font-black text-gray-900 tracking-wide">Green Cafe</h1>
+                <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-wide">Green Cafe</h1>
                 <p className="text-xs sm:text-sm text-gray-500 font-semibold">{t('Branch Audit', 'تدقيق الفروع')}</p>
               </div>
             </div>
             
             {/* Controls */}
             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              <button 
+                onClick={() => setShowSearch(!showSearch)}
+                className="p-2 bg-green-100 hover:bg-green-200 rounded-lg text-green-700 transition-colors"
+                title="Search"
+              >
+                <Search className="w-4 h-4" />
+              </button>
               <a 
                 href="/dashboard"
                 className="px-2 sm:px-3 py-1.5 bg-green-100 hover:bg-green-200 rounded-lg text-xs font-bold text-green-700 transition-colors"
@@ -341,6 +375,31 @@ ${actionText}`;
           </div>
         </div>
         
+        {/* Search Bar */}
+        {showSearch && (
+          <div className="px-3 sm:px-4 pb-2 animate-in slide-in-from-top-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder={t('Search questions...', 'البحث في الأسئلة...')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                autoFocus
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        
         {/* Score Bar */}
         <div className="px-3 sm:px-4 pb-3 sm:pb-4">
           <div className="flex items-center justify-between mb-2">
@@ -350,7 +409,30 @@ ${actionText}`;
                 {shortlist.pct >= 90 && ccpPassed ? t('PASS', 'ناجح') : t('PENDING', 'قيد')}
               </span>
             </div>
-            <span className="text-2xl sm:text-3xl font-black text-gray-900">{shortlist.pct}%</span>
+            {/* Circular Progress Ring */}
+            <div className="relative w-20 h-20">
+              <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  className="text-gray-200"
+                />
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeDasharray={`${shortlist.pct}, 100`}
+                  strokeLinecap="round"
+                  className={`${shortlist.pct >= 90 && ccpPassed ? 'text-green-500' : shortlist.pct >= 70 ? 'text-yellow-500' : 'text-red-500'} transition-all duration-500`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-2xl font-black text-gray-900">{shortlist.pct}%</span>
+              </div>
+            </div>
           </div>
           
           {/* Progress Bar with Glow */}
@@ -514,7 +596,7 @@ ${actionText}`;
             </div>
 
             {/* Categories with Icons */}
-            {categoriesToShow.map(cat => {
+            {filteredCategories.map(cat => {
               const catIds = cat.points.map(p => p.id);
               const catCalc = calc(catIds, auditCategories);
               
@@ -554,9 +636,9 @@ ${actionText}`;
                     </div>
                   </div>
                   
-                  <div className="p-4 space-y-4">
+                  <div className="p-5 space-y-5">
                     {cat.points.map(p => (
-                      <div key={p.id} className={`border-2 rounded-2xl p-4 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5 ${p.isCCP ? 'border-red-300 bg-red-50/50' : 'border-gray-100 hover:border-green-300'}`}>
+                      <div key={p.id} className={`border-2 rounded-2xl p-5 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5 ${p.isCCP ? 'border-red-300 bg-red-50/50' : 'border-gray-100 hover:border-green-300'}`}>
                         {/* Question Header with Big Number */}
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
@@ -599,10 +681,10 @@ ${actionText}`;
                           {isArabic ? p.questionAr : p.question}
                         </p>
                         
-                        {/* CCP Critical Reason - Collapsible */}
+                        {/* CCP Critical Reason - shown as subtitle */}
                         {p.isCCP && p.criticalReason && (
-                          <div className="text-xs text-gray-600 bg-red-100 rounded-xl p-3 mb-3 border-l-4 border-red-500">
-                            <span className="font-bold text-red-700">⚠️ {t('Critical', 'حرج')}:</span> {p.criticalReason}
+                          <div className="text-xs text-gray-600 bg-red-50 rounded-lg p-2 mb-2 border-l-2 border-red-400">
+                            <span className="font-bold text-red-600">⚠️ {t('Critical', 'حرج')}:</span> {p.criticalReason}
                           </div>
                         )}
                         
