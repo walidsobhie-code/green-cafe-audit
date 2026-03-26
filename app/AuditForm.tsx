@@ -414,22 +414,14 @@ ${actionText}`;
       {/* Keep just one Steps display */}
       {showHelp && (
         <div className="px-3 sm:px-4 pt-3 sm:pt-4">
-          <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
-            {[
-              { n: '1', t: t('Fill', 'املأ'), c: 'bg-blue-500 shadow-lg shadow-blue-500/30', icon: '📝' },
-              { n: '2', t: t('Score', 'نتيجة'), c: 'bg-purple-500 shadow-lg shadow-purple-500/30', icon: '📊' },
-              { n: '3', t: t('90%+ CCP', 'اجتياز'), c: 'bg-green-500 shadow-lg shadow-green-500/30', icon: '✅' },
-              { n: '4', t: 'PDF', c: 'bg-orange-500 shadow-lg shadow-orange-500/30', icon: '📄' },
-            ].map((step, i) => (
-              <div key={i} className="flex items-center">
-                <div className={`${step.c} text-gray-900 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg`}>
-                  <span>{step.icon}</span>
-                  <span className="hidden sm:inline">{step.n}.</span>
-                  <span>{step.t}</span>
-                </div>
-                {i < 3 && <span className="text-gray-400 mx-1">→</span>}
-              </div>
-            ))}
+          <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+            <div className="px-3 py-2 bg-gradient-to-b from-blue-500 to-blue-600 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-blue-700">📝 1. {t('Fill', 'املأ')}</div>
+            <span className="text-gray-400">→</span>
+            <div className="px-3 py-2 bg-gradient-to-b from-purple-500 to-purple-600 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-purple-700">📊 2. {t('Score', 'نتيجة')}</div>
+            <span className="text-gray-400">→</span>
+            <div className="px-3 py-2 bg-gradient-to-b from-green-500 to-green-600 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-green-700">✅ 3. {t('90%+', 'اجتياز')}</div>
+            <span className="text-gray-400">→</span>
+            <div className="px-3 py-2 bg-gradient-to-b from-orange-500 to-orange-600 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-orange-700">📄 4. PDF</div>
           </div>
           {/* Progress indicator based on current state */}
           <div className="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
