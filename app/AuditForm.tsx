@@ -94,13 +94,27 @@ export default function AuditForm() {
       STANDARD: { total: 0, max: 0, passed: 0 }
     };
     
+    // Category breakdown
+    const categoryScores: Record<string, { total: number; max: number }> = {
+      safety: { total: 0, max: 0 },
+      operations: { total: 0, max: 0 },
+      service: { total: 0, max: 0 },
+      hygiene: { total: 0, max: 0 },
+      storage: { total: 0, max: 0 },
+      beverage: { total: 0, max: 0 },
+    };
+    
     ids.forEach(id => {
       const s = scores[id]?.score;
       // Find the point to check if it's CCP
       let point: AuditPoint | undefined;
+      let category = 'service';
       for (const cat of categories) {
         point = cat.points.find(p => p.id === id);
-        if (point) break;
+        if (point) {
+          category = point.category?.toLowerCase() || 'service';
+          break;
+        }
       }
       
       const priority = point?.priority || (point?.isCCP ? 'CCP' : 'STANDARD');
@@ -110,6 +124,11 @@ export default function AuditForm() {
         t += s * (weight / 2);
         priorityScores[priority].total += s * (weight / 2);
         
+        // Add to category score
+        if (categoryScores[category]) {
+          categoryScores[category].total += s * (weight / 2);
+        }
+        
         if (point?.isCCP) {
           ccpTotal += weight;
           if (s === 2) ccpPassed += weight;
@@ -118,6 +137,9 @@ export default function AuditForm() {
       }
       m += weight;
       priorityScores[priority].max += weight;
+      if (categoryScores[category]) {
+        categoryScores[category].max += weight;
+      }
       if (s === 2) priorityScores[priority].passed += weight;
     });
     
@@ -133,7 +155,10 @@ export default function AuditForm() {
         CCP: { ...priorityScores.CCP, pct: priorityScores.CCP.max ? Math.round((priorityScores.CCP.total / priorityScores.CCP.max) * 100) : 0 },
         HIGH: { ...priorityScores.HIGH, pct: priorityScores.HIGH.max ? Math.round((priorityScores.HIGH.total / priorityScores.HIGH.max) * 100) : 0 },
         STANDARD: { ...priorityScores.STANDARD, pct: priorityScores.STANDARD.max ? Math.round((priorityScores.STANDARD.total / priorityScores.STANDARD.max) * 100) : 0 }
-      }
+      },
+      categoryScores: Object.fromEntries(
+        Object.entries(categoryScores).map(([k, v]) => [k, { ...v, pct: v.max ? Math.round((v.total / v.max) * 100) : 0 }])
+      )
     };
   };
 
@@ -392,25 +417,26 @@ ${actionText}`;
           </div>
         </div>
         
-        {/* Category Breakdown - 3D */}
+        {/* Category Breakdown - 3D with real scores */}
         <div className="px-3 pb-3">
           <div className="grid grid-cols-4 gap-1.5">
-            <div className="relative text-center py-2 rounded-xl shadow-lg border-b-4 bg-gradient-to-b from-red-50 to-red-100 border-red-600">
-              <div className="text-[9px] font-bold text-gray-500 uppercase">السلامة</div>
-              <div className="text-lg font-black text-red-600">--%</div>
-            </div>
-            <div className="relative text-center py-2 rounded-xl shadow-lg border-b-4 bg-gradient-to-b from-orange-50 to-orange-100 border-orange-600">
-              <div className="text-[9px] font-bold text-gray-500 uppercase">العمليات</div>
-              <div className="text-lg font-black text-orange-600">--%</div>
-            </div>
-            <div className="relative text-center py-2 rounded-xl shadow-lg border-b-4 bg-gradient-to-b from-blue-50 to-blue-100 border-blue-600">
-              <div className="text-[9px] font-bold text-gray-500 uppercase">الخدمة</div>
-              <div className="text-lg font-black text-blue-600">--%</div>
-            </div>
-            <div className="relative text-center py-2 rounded-xl shadow-lg border-b-4 bg-gradient-to-b from-green-50 to-green-100 border-green-600">
-              <div className="text-[9px] font-bold text-gray-500 uppercase">النظافة</div>
-              <div className="text-lg font-black text-green-600">--%</div>
-            </div>
+            {[
+              { id: 'safety', label: 'السلامة', color: 'red' },
+              { id: 'operations', label: 'العمليات', color: 'orange' },
+              { id: 'service', label: 'الخدمة', color: 'blue' },
+              { id: 'hygiene', label: 'النظافة', color: 'green' },
+            ].map(cat => {
+              const catData = shortlist.categoryScores?.[cat.id] || { total: 0, max: 0, pct: 0 };
+              const pct = catData.pct || 0;
+              const isPass = pct >= 90;
+              const isWarn = pct >= 70 && pct < 90;
+              return (
+                <div key={cat.id} className={`relative text-center py-2 rounded-xl shadow-lg border-b-4 ${isPass ? 'bg-gradient-to-b from-green-50 to-green-100 border-green-600' : isWarn ? 'bg-gradient-to-b from-yellow-50 to-yellow-100 border-yellow-600' : 'bg-gradient-to-b from-red-50 to-red-100 border-red-600'}`}>
+                  <div className="text-[9px] font-bold text-gray-500 uppercase">{cat.label}</div>
+                  <div className={`text-lg font-black ${isPass ? 'text-green-600' : isWarn ? 'text-yellow-600' : 'text-red-600'}`}>{pct}%</div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </header>
