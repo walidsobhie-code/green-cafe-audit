@@ -788,6 +788,13 @@ ${actionText}`;
             </div>
             <span className="text-sm sm:text-base font-bold text-gray-700">Green Cafe Egypt</span>
           </div>
+          <div className="flex items-center justify-center gap-4 mb-3 text-sm">
+            <a href="/about" className="text-gray-500 hover:text-green-600 transition-colors">{lang === 'en' ? 'About' : 'من نحن'}</a>
+            <span className="text-gray-300">|</span>
+            <a href="/contact" className="text-gray-500 hover:text-green-600 transition-colors">{lang === 'en' ? 'Contact' : 'اتصل بنا'}</a>
+            <span className="text-gray-300">|</span>
+            <a href="/privacy" className="text-gray-500 hover:text-green-600 transition-colors">{lang === 'en' ? 'Privacy' : 'الخصوصية'}</a>
+          </div>
           <div className="border-t border-gray-100 pt-2 sm:pt-3 mt-2 sm:mt-3">
             <p className="text-xs text-gray-400">© 2026 {t('All Rights Reserved', 'جميع الحقوق محفوظة')}</p>
           </div>
