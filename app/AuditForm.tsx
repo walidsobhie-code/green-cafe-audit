@@ -409,21 +409,9 @@ ${actionText}`;
             </div>
           </div>
         </div>
-        
-        {/* Steps */}
-        <div className="px-3 pb-3">
-          <div className="flex items-center justify-center gap-2">
-            <span className="px-2 py-1 bg-blue-500 text-white text-[10px] font-bold rounded">1. {t('Fill', 'املأ')}</span>
-            <span className="text-gray-300">→</span>
-            <span className="px-2 py-1 bg-purple-500 text-white text-[10px] font-bold rounded">2. {t('Score', 'نتيجة')}</span>
-            <span className="text-gray-300">→</span>
-            <span className="px-2 py-1 bg-green-500 text-white text-[10px] font-bold rounded">3. 90%+</span>
-            <span className="text-gray-300">→</span>
-            <span className="px-2 py-1 bg-orange-500 text-white text-[10px] font-bold rounded">4. PDF</span>
-          </div>
-        </div>
       </header>
 
+      {/* Keep just one Steps display */}
       {showHelp && (
         <div className="px-3 sm:px-4 pt-3 sm:pt-4">
           <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
