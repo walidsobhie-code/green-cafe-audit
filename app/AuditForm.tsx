@@ -331,54 +331,33 @@ ${actionText}`;
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 transition-colors">
       <Toaster position="top-center" richColors />
-      {/* Bright Header with 3D Harmony Theme */}
-      <header className="bg-white border-b-4 border-gray-200 shadow-2xl">
-        <div className="px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-2">
-            {/* Logo & Title - White Text on Green */}
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="relative">
-                <img src="/logo.png" alt="Logo" className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl shadow-xl border-2 border-white" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-wide drop-shadow-md">
-                  Green Cafe
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-500 font-semibold flex items-center gap-1">
-                  <span className="w-2 h-2 bg-white rounded-full animate-pulse shadow"></span>
-                  {t('Branch Audit', 'تدقيق الفروع')}
-                </p>
+      {/* Clean Header */}
+      <header className="bg-white border-b-2 border-gray-200 shadow-lg">
+        <div className="px-3 sm:px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            {/* Left: Logo + Title */}
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="Logo" className="w-12 h-12 rounded-xl shadow-md" />
+              <div>
+                <h1 className="text-xl font-black text-gray-900">Green Cafe</h1>
+                <p className="text-xs text-gray-500 font-medium">{t('Branch Audit', 'تدقيق الفروع')}</p>
               </div>
             </div>
             
-            {/* Controls - White Buttons */}
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-              <button 
-                onClick={() => setShowSearch(!showSearch)}
-                className="p-2 bg-white/90 hover:bg-white rounded-xl text-green-600 transition-all shadow-lg hover:shadow-xl border-2 border-white/50"
-                title="Search"
-              >
+            {/* Right: Controls */}
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowSearch(!showSearch)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600">
                 <Search className="w-4 h-4" />
               </button>
-              <a 
-                href="/dashboard"
-                className="px-3 sm:px-4 py-2 bg-white hover:bg-gray-50 rounded-xl text-xs font-bold text-green-600 transition-all shadow-lg hover:shadow-xl border-2 border-white"
-              >
+              <a href="/dashboard" className="px-3 py-1.5 bg-green-500 hover:bg-green-600 rounded-lg text-xs font-bold text-white">
                 📊 {t('Dashboard', 'لوحة')}
               </a>
-              <select 
-                value={auditMode} 
-                onChange={(e) => setAuditMode(e.target.value as 'shortlist' | 'full')}
-                className="px-2 sm:px-3 py-2 bg-white border-2 border-white/50 rounded-xl text-xs font-bold text-green-700 focus:outline-none focus:ring-2 focus:ring-white cursor-pointer shadow-lg"
-              >
-                <option value="shortlist" className="text-gray-800">{t('25', '25')}</option>
-                <option value="full" className="text-gray-800">{t('50', '50')}</option>
+              <select value={auditMode} onChange={(e) => setAuditMode(e.target.value as 'shortlist' | 'full')} className="px-2 py-1.5 bg-gray-100 border border-gray-200 rounded-lg text-xs font-bold text-gray-700">
+                <option value="shortlist">{t('25', '25')}</option>
+                <option value="full">{t('50', '50')}</option>
               </select>
-              <button onClick={() => setLang(isArabic ? 'en' : 'ar')} className="px-3 sm:px-4 py-2 bg-white/90 hover:bg-white rounded-xl text-xs font-bold text-green-600 transition-all shadow-lg border-2 border-white/50">
+              <button onClick={() => setLang(isArabic ? 'en' : 'ar')} className="px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-bold text-gray-700">
                 {isArabic ? 'EN' : 'عربي'}
-              </button>
-              <button onClick={() => setShowHelp(!showHelp)} className="w-10 h-10 sm:w-11 sm:h-11 bg-white/90 hover:bg-white rounded-xl flex items-center justify-center text-lg font-bold text-green-600 transition-all shadow-lg border-2 border-white/50">
-                ?
               </button>
             </div>
           </div>
@@ -386,102 +365,61 @@ ${actionText}`;
         
         {/* Search Bar */}
         {showSearch && (
-          <div className="px-3 sm:px-4 pb-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-600" />
-              <input
-                type="text"
-                placeholder={t('Search questions...', 'البحث في الأسئلة...')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white border-2 border-white/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-white shadow-lg text-gray-800 placeholder:text-gray-400"
-                autoFocus
-              />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
+          <div className="px-3 pb-3">
+            <input type="text" placeholder={t('Search...', 'بحث...')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm" autoFocus />
           </div>
         )}
         
-        {/* Score Bar - 3D Enhanced */}
-        <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-          <div className="bg-white rounded-xl p-3 shadow-lg border border-gray-100">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('Score', 'النتيجة')}</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${ccpPassed && shortlist.pct >= 90 ? 'bg-gradient-to-r from-green-500 to-green-600 text-gray-900' : 'bg-gradient-to-r from-yellow-500 to-orange-500 text-gray-900'}`}>
-                  {shortlist.pct >= 90 && ccpPassed ? t('PASS ✓', 'ناجح ✓') : t('PENDING', 'قيد')}
-                </span>
-              </div>
-              {/* 3D Circular Progress Ring */}
-              <div className="relative w-20 h-20 drop-shadow-xl">
-                <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
-                  <path
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    className="text-gray-100"
-                  />
-                  <path
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3.5"
-                    strokeDasharray={`${shortlist.pct}, 100`}
-                    strokeLinecap="round"
-                    className={`${shortlist.pct >= 90 && ccpPassed ? 'text-green-500' : shortlist.pct >= 70 ? 'text-yellow-500' : 'text-red-500'} transition-all duration-500`}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-2xl font-black text-gray-800 drop-shadow-sm">{shortlist.pct}%</span>
-                </div>
-              </div>
+        {/* Score Display */}
+        <div className="px-3 pb-3">
+          <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3 border border-gray-200">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-bold text-gray-500">{t('Score', 'النتيجة')}</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${ccpPassed && shortlist.pct >= 90 ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}`}>
+                {shortlist.pct >= 90 && ccpPassed ? 'PASS ✓' : 'PENDING'}
+              </span>
             </div>
-            
-            {/* 3D Progress Bar */}
-            <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden shadow-inner">
-              <div 
-                className={`h-full transition-all duration-500 rounded-full shadow-lg ${shortlist.pct >= 90 && ccpPassed ? 'bg-gradient-to-r from-green-400 to-green-600' : shortlist.pct >= 70 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : 'bg-gradient-to-r from-red-400 to-red-600'}`} 
-                style={{ width: `${shortlist.pct}%` }} 
-              />
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-2xl font-black text-gray-900">{shortlist.pct}%</div>
+                <div className="text-[10px] text-gray-400">{shortlist.total}/{shortlist.max}</div>
+              </div>
+              {/* Progress bar */}
+              <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className={`h-full ${shortlist.pct >= 90 ? 'bg-green-500' : shortlist.pct >= 70 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${shortlist.pct}%` }} />
+              </div>
             </div>
           </div>
-          
-          {/* Priority Breakdown */}
-          <div className="flex justify-between mt-2 text-xs font-bold text-gray-500">
-            <span>{shortlist.total}/{shortlist.max} pts</span>
-            <span>CCP: {shortlist.ccpPct}%</span>
+        </div>
+        
+        {/* Priority Cards */}
+        <div className="px-3 pb-3">
+          <div className="grid grid-cols-3 gap-2">
+            <div className={`text-center py-2 rounded-lg ${shortlist.priorityScores.CCP.pct >= 90 ? 'bg-green-100 border border-green-300' : 'bg-red-100 border border-red-300'}`}>
+              <div className="text-[10px] font-bold text-gray-500">CCP</div>
+              <div className={`text-lg font-black ${shortlist.priorityScores.CCP.pct >= 90 ? 'text-green-600' : 'text-red-600'}`}>{shortlist.priorityScores.CCP.pct}%</div>
+            </div>
+            <div className={`text-center py-2 rounded-lg ${shortlist.priorityScores.HIGH.pct >= 70 ? 'bg-green-100 border border-green-300' : 'bg-yellow-100 border border-yellow-300'}`}>
+              <div className="text-[10px] font-bold text-gray-500">HIGH</div>
+              <div className={`text-lg font-black ${shortlist.priorityScores.HIGH.pct >= 70 ? 'text-green-600' : 'text-yellow-600'}`}>{shortlist.priorityScores.HIGH.pct}%</div>
+            </div>
+            <div className={`text-center py-2 rounded-lg ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'bg-green-100 border border-green-300' : 'bg-gray-100 border border-gray-300'}`}>
+              <div className="text-[10px] font-bold text-gray-500">STD</div>
+              <div className={`text-lg font-black ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'text-green-600' : 'text-gray-600'}`}>{shortlist.priorityScores.STANDARD.pct}%</div>
+            </div>
           </div>
-          {/* Priority Scores - 3D Enhanced Visual */}
-          <div className="grid grid-cols-3 gap-2 mt-3">
-            <div className={`relative rounded-xl px-2 py-2 text-center shadow-lg border-b-4 ${shortlist.priorityScores.CCP.pct >= 90 ? 'bg-gradient-to-b from-green-100 to-green-50 border-green-600' : 'bg-gradient-to-b from-red-100 to-red-50 border-red-600'}`}>
-              <div className="text-[10px] text-gray-500 font-bold">CCP</div>
-              <div className={`text-2xl font-black ${shortlist.priorityScores.CCP.pct >= 90 ? 'text-green-600' : 'text-red-600'}`}>
-                {shortlist.priorityScores.CCP.pct}%
-              </div>
-              <div className="text-[9px] text-gray-400">{shortlist.priorityScores.CCP.passed}/{shortlist.priorityScores.CCP.max}</div>
-            </div>
-            <div className={`relative rounded-xl px-2 py-2 text-center shadow-lg border-b-4 ${shortlist.priorityScores.HIGH.pct >= 70 ? 'bg-gradient-to-b from-green-100 to-green-50 border-green-600' : 'bg-gradient-to-b from-yellow-100 to-yellow-50 border-yellow-600'}`}>
-              <div className="text-[10px] text-gray-500 font-bold">HIGH</div>
-              <div className={`text-2xl font-black ${shortlist.priorityScores.HIGH.pct >= 70 ? 'text-green-600' : 'text-yellow-600'}`}>
-                {shortlist.priorityScores.HIGH.pct}%
-              </div>
-              <div className="text-[9px] text-gray-400">{shortlist.priorityScores.HIGH.passed}/{shortlist.priorityScores.HIGH.max}</div>
-            </div>
-            <div className={`relative rounded-xl px-2 py-2 text-center shadow-lg border-b-4 ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'bg-gradient-to-b from-green-100 to-green-50 border-green-600' : 'bg-gradient-to-b from-gray-100 to-gray-50 border-gray-500'}`}>
-              <div className="text-[10px] text-gray-500 font-bold">STD</div>
-              <div className={`text-2xl font-black ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'text-green-600' : 'text-gray-600'}`}>
-                {shortlist.priorityScores.STANDARD.pct}%
-              </div>
-              <div className="text-[9px] text-gray-400">{shortlist.priorityScores.STANDARD.passed}/{shortlist.priorityScores.STANDARD.max}</div>
-            </div>
+        </div>
+        
+        {/* Steps */}
+        <div className="px-3 pb-3">
+          <div className="flex items-center justify-center gap-2">
+            <span className="px-2 py-1 bg-blue-500 text-white text-[10px] font-bold rounded">1. {t('Fill', 'املأ')}</span>
+            <span className="text-gray-300">→</span>
+            <span className="px-2 py-1 bg-purple-500 text-white text-[10px] font-bold rounded">2. {t('Score', 'نتيجة')}</span>
+            <span className="text-gray-300">→</span>
+            <span className="px-2 py-1 bg-green-500 text-white text-[10px] font-bold rounded">3. 90%+</span>
+            <span className="text-gray-300">→</span>
+            <span className="px-2 py-1 bg-orange-500 text-white text-[10px] font-bold rounded">4. PDF</span>
           </div>
         </div>
       </header>
