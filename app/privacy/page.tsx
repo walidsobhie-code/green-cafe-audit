@@ -51,7 +51,7 @@ export default function PrivacyPolicy() {
         {
           title: 'Contact Us',
           items: [
-            'Email: greencafe.audit@gmail.com',
+            'Email: walid.sobhy@mmgunited.com',
             'We respond within 3-5 business days'
           ]
         }
@@ -102,7 +102,7 @@ export default function PrivacyPolicy() {
         {
           title: 'اتصل بنا',
           items: [
-            'البريد الإلكتروني: greencafe.audit@gmail.com',
+            'البريد الإلكتروني: walid.sobhy@mmgunited.com',
             'نستجيب خلال ٣-٥ أيام عمل'
           ]
         }

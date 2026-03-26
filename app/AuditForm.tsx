@@ -448,19 +448,28 @@ ${actionText}`;
             <span>{shortlist.total}/{shortlist.max} pts</span>
             <span>CCP: {shortlist.ccpPct}%</span>
           </div>
-          {/* Priority Scores */}
-          <div className="flex gap-2 mt-2">
-            <div className="flex-1 bg-red-50 border border-red-200 rounded-lg px-2 py-1 text-center">
-              <div className="text-[10px] text-red-600 font-bold">CCP</div>
-              <div className="text-sm font-black text-red-700">{shortlist.priorityScores.CCP.pct}%</div>
+          {/* Priority Scores - Enhanced Visual */}
+          <div className="flex gap-2 mt-3">
+            <div className={`flex-1 rounded-xl px-3 py-2 text-center ${shortlist.priorityScores.CCP.pct >= 90 ? 'bg-green-100 border-2 border-green-400' : 'bg-red-50 border-2 border-red-200'}`}>
+              <div className="text-xs text-gray-500 font-bold">CCP</div>
+              <div className={`text-lg font-black ${shortlist.priorityScores.CCP.pct >= 90 ? 'text-green-600' : 'text-red-600'}`}>
+                {shortlist.priorityScores.CCP.pct}%
+              </div>
+              <div className="text-[10px] text-gray-400">{shortlist.priorityScores.CCP.passed}/{shortlist.priorityScores.CCP.max}</div>
             </div>
-            <div className="flex-1 bg-yellow-50 border border-yellow-200 rounded-lg px-2 py-1 text-center">
-              <div className="text-[10px] text-yellow-600 font-bold">HIGH</div>
-              <div className="text-sm font-black text-yellow-700">{shortlist.priorityScores.HIGH.pct}%</div>
+            <div className={`flex-1 rounded-xl px-3 py-2 text-center ${shortlist.priorityScores.HIGH.pct >= 70 ? 'bg-green-100 border-2 border-green-400' : 'bg-yellow-50 border-2 border-yellow-200'}`}>
+              <div className="text-xs text-gray-500 font-bold">HIGH</div>
+              <div className={`text-lg font-black ${shortlist.priorityScores.HIGH.pct >= 70 ? 'text-green-600' : 'text-yellow-600'}`}>
+                {shortlist.priorityScores.HIGH.pct}%
+              </div>
+              <div className="text-[10px] text-gray-400">{shortlist.priorityScores.HIGH.passed}/{shortlist.priorityScores.HIGH.max}</div>
             </div>
-            <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-center">
-              <div className="text-[10px] text-gray-600 font-bold">STD</div>
-              <div className="text-sm font-black text-gray-700">{shortlist.priorityScores.STANDARD.pct}%</div>
+            <div className={`flex-1 rounded-xl px-3 py-2 text-center ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'bg-green-100 border-2 border-green-400' : 'bg-gray-50 border-2 border-gray-200'}`}>
+              <div className="text-xs text-gray-500 font-bold">STD</div>
+              <div className={`text-lg font-black ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'text-green-600' : 'text-gray-600'}`}>
+                {shortlist.priorityScores.STANDARD.pct}%
+              </div>
+              <div className="text-[10px] text-gray-400">{shortlist.priorityScores.STANDARD.passed}/{shortlist.priorityScores.STANDARD.max}</div>
             </div>
           </div>
         </div>
@@ -470,18 +479,29 @@ ${actionText}`;
         <div className="px-3 sm:px-4 pt-3 sm:pt-4">
           <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
             {[
-              { n: '1', t: t('Fill', 'املأ'), c: 'bg-blue-500 shadow-lg shadow-blue-500/30' },
-              { n: '2', t: t('Score', 'نتيجة'), c: 'bg-purple-500 shadow-lg shadow-purple-500/30' },
-              { n: '3', t: '90%+ CCP', c: 'bg-green-500 shadow-lg shadow-green-500/30' },
-              { n: '4', t: 'PDF', c: 'bg-orange-500 shadow-lg shadow-orange-500/30' },
+              { n: '1', t: t('Fill', 'املأ'), c: 'bg-blue-500 shadow-lg shadow-blue-500/30', icon: '📝' },
+              { n: '2', t: t('Score', 'نتيجة'), c: 'bg-purple-500 shadow-lg shadow-purple-500/30', icon: '📊' },
+              { n: '3', t: t('90%+ CCP', 'اجتياز'), c: 'bg-green-500 shadow-lg shadow-green-500/30', icon: '✅' },
+              { n: '4', t: 'PDF', c: 'bg-orange-500 shadow-lg shadow-orange-500/30', icon: '📄' },
             ].map((step, i) => (
               <div key={i} className="flex items-center">
-                <span className={`${step.c} text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold`}>
-                  {step.n}. {step.t}
-                </span>
+                <div className={`${step.c} text-white px-3 sm:px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg`}>
+                  <span>{step.icon}</span>
+                  <span className="hidden sm:inline">{step.n}.</span>
+                  <span>{step.t}</span>
+                </div>
                 {i < 3 && <span className="text-gray-400 mx-1">→</span>}
               </div>
             ))}
+          </div>
+          {/* Progress indicator based on current state */}
+          <div className="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 transition-all duration-500"
+              style={{ 
+                width: submitted ? '100%' : scores && Object.keys(scores).length > 0 ? '50%' : '25%' 
+              }}
+            />
           </div>
         </div>
       )}

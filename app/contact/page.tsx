@@ -32,7 +32,7 @@ export default function Contact() {
       successMessage: 'Thank you! We\'ll get back to you soon.',
       infoTitle: 'Contact Information',
       info: [
-        { icon: Mail, label: 'Email', value: 'greencafe.audit@gmail.com' },
+        { icon: Mail, label: 'Email', value: 'walid.sobhy@mmgunited.com' },
         { icon: Clock, label: 'Response Time', value: 'Within 3-5 business days' }
       ],
       backToHome: '← Back to Audit'
@@ -53,7 +53,7 @@ export default function Contact() {
       successMessage: 'شكراً لك! سنعود إليك قريباً.',
       infoTitle: 'معلومات الاتصال',
       info: [
-        { icon: Mail, label: 'البريد الإلكتروني', value: 'greencafe.audit@gmail.com' },
+        { icon: Mail, label: 'البريد الإلكتروني', value: 'walid.sobhy@mmgunited.com' },
         { icon: Clock, label: 'وقت الاستجابة', value: 'خلال ٣-٥ أيام عمل' }
       ],
       backToHome: '← العودة للتدقيق'
