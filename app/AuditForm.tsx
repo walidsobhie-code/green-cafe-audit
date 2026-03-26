@@ -329,63 +329,74 @@ ${actionText}`;
     : categoriesToShow;
 
   return (
-    <div className="min-h-screen bg-gray-50 transition-colors">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 transition-colors">
       <Toaster position="top-center" richColors />
-      {/* White Header - Clean & Bold */}
-      <header className="bg-white border-b-2 border-gray-200 shadow-lg">
+      {/* 3D Header - Enhanced */}
+      <header className="bg-white border-b-4 border-green-500 shadow-xl">
         <div className="px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2">
-            {/* Logo & Title */}
+            {/* Logo & Title - Enhanced */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <img src="/logo.png" alt="Logo" className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl shadow-md" />
+              <div className="relative">
+                <img src="/logo.png" alt="Logo" className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl shadow-lg border-2 border-green-100" />
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+              </div>
               <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-wide">Green Cafe</h1>
-                <p className="text-xs sm:text-sm text-gray-500 font-semibold">{t('Branch Audit', 'تدقيق الفروع')}</p>
+                <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-wide flex items-center gap-2">
+                  <span className="text-green-600">☕</span>
+                  Green Cafe
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-500 font-semibold flex items-center gap-1">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  {t('Branch Audit', 'تدقيق الفروع')}
+                </p>
               </div>
             </div>
             
-            {/* Controls */}
+            {/* Controls - 3D Buttons */}
             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
               <button 
                 onClick={() => setShowSearch(!showSearch)}
-                className="p-2 bg-green-100 hover:bg-green-200 rounded-lg text-green-700 transition-colors"
+                className="p-2 bg-gradient-to-b from-green-100 to-green-50 hover:from-green-200 hover:to-green-100 rounded-xl text-green-700 transition-all shadow hover:shadow-md border border-green-200"
                 title="Search"
               >
                 <Search className="w-4 h-4" />
               </button>
               <a 
                 href="/dashboard"
-                className="px-2 sm:px-3 py-1.5 bg-green-100 hover:bg-green-200 rounded-lg text-xs font-bold text-green-700 transition-colors"
+                className="px-3 sm:px-4 py-2 bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl text-xs font-bold text-white transition-all shadow-lg hover:shadow-xl border-b-2 border-green-700"
               >
                 📊 {t('Dashboard', 'لوحة')}
               </a>
               <select 
                 value={auditMode} 
                 onChange={(e) => setAuditMode(e.target.value as 'shortlist' | 'full')}
-                className="px-2 sm:px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400 cursor-pointer"
+                className="px-2 sm:px-3 py-2 bg-gradient-to-b from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 cursor-pointer shadow"
               >
                 <option value="shortlist" className="text-gray-800">{t('25', '25')}</option>
                 <option value="full" className="text-gray-800">{t('50', '50')}</option>
               </select>
-              <button onClick={() => setLang(isArabic ? 'en' : 'ar')} className="px-2 sm:px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-bold text-gray-700 transition-colors">
+              <button onClick={() => setLang(isArabic ? 'en' : 'ar')} className="px-3 sm:px-4 py-2 bg-gradient-to-b from-gray-100 to-gray-50 hover:from-gray-200 hover:to-gray-100 rounded-xl text-xs font-bold text-gray-700 transition-all shadow border-2 border-gray-200">
                 {isArabic ? 'EN' : 'عربي'}
               </button>
-              <button onClick={() => setShowHelp(!showHelp)} className="w-8 h-8 sm:w-9 sm:h-9 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center text-sm font-bold text-gray-600 transition-colors">?</button>
+              <button onClick={() => setShowHelp(!showHelp)} className="w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-b from-gray-100 to-gray-50 hover:from-gray-200 hover:to-gray-100 rounded-xl flex items-center justify-center text-lg font-bold text-gray-600 transition-all shadow border-2 border-gray-200 hover:border-green-300">
+                ?
+              </button>
             </div>
           </div>
         </div>
         
         {/* Search Bar */}
         {showSearch && (
-          <div className="px-3 sm:px-4 pb-2 animate-in slide-in-from-top-2">
+          <div className="px-3 sm:px-4 pb-3 animate-in slide-in-from-top-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
               <input
                 type="text"
                 placeholder={t('Search questions...', 'البحث في الأسئلة...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                className="w-full pl-10 pr-4 py-3 bg-white border-2 border-green-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 shadow-lg"
                 autoFocus
               />
               {searchQuery && (
