@@ -392,26 +392,20 @@ ${actionText}`;
           </div>
         </div>
         
-        {/* Category Scores */}
+        {/* Category Scores - Safety, Operations, Service, Hygiene */}
         <div className="px-3 pb-3">
           <div className="grid grid-cols-4 gap-1.5">
             {[
-              { id: 'safety', label: 'السلامة', en: 'Safety', color: 'red' },
-              { id: 'operations', label: 'العمليات', en: 'Operations', color: 'orange' },
-              { id: 'service', label: 'الخدمة', en: 'Service', color: 'blue' },
-              { id: 'hygiene', label: 'النظافة', en: 'Hygiene', color: 'green' },
-            ].map(cat => {
-              const catData = shortlist.categoryScores?.[cat.id] || { total: 0, max: 0, pct: 0 };
-              const pct = catData.pct || (catData.max ? Math.round((catData.total / catData.max) * 100) : 0);
-              const isPass = pct >= 90;
-              const isWarn = pct >= 70 && pct < 90;
-              return (
-                <div key={cat.id} className={`text-center py-1.5 px-1 rounded-lg ${isPass ? 'bg-green-100 border-2 border-green-400' : isWarn ? 'bg-yellow-100 border-2 border-yellow-400' : 'bg-red-100 border-2 border-red-300'}`}>
-                  <div className="text-[8px] font-bold text-gray-500 uppercase">{t(cat.en, cat.label)}</div>
-                  <div className={`text-base font-black ${isPass ? 'text-green-600' : isWarn ? 'text-yellow-600' : 'text-red-600'}`}>{pct}%</div>
-                </div>
-              );
-            })}
+              { id: 'safety', label: 'السلامة', en: 'Safety' },
+              { id: 'operations', label: 'العمليات', en: 'Operations' },
+              { id: 'service', label: 'الخدمة', en: 'Service' },
+              { id: 'hygiene', label: 'النظافة', en: 'Hygiene' },
+            ].map(cat => (
+              <div key={cat.id} className="text-center py-1.5 px-1 rounded-lg bg-gray-50 border border-gray-200">
+                <div className="text-[8px] font-bold text-gray-500 uppercase">{t(cat.en, cat.label)}</div>
+                <div className="text-base font-black text-gray-400">--%</div>
+              </div>
+            ))}
           </div>
         </div>
       </header>
