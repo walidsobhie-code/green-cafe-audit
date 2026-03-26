@@ -21,9 +21,9 @@ interface SavedDraft {
 }
 
 const scoreButtons = [
-  { s: 2, l: '✓', c: 'bg-gradient-to-br from-green-500 to-green-700 text-white' },
-  { s: 1, l: '△', c: 'bg-gradient-to-br from-yellow-500 to-amber-600 text-white' },
-  { s: 0, l: '✗', c: 'bg-gradient-to-br from-red-500 to-red-700 text-white' },
+  { s: 2, l: '✓', c: 'bg-gradient-to-br from-green-500 to-green-700 text-gray-900' },
+  { s: 1, l: '△', c: 'bg-gradient-to-br from-yellow-500 to-amber-600 text-gray-900' },
+  { s: 0, l: '✗', c: 'bg-gradient-to-br from-red-500 to-red-700 text-gray-900' },
   { s: -1, l: 'N', c: 'bg-gray-300 text-gray-600' },
 ];
 
@@ -332,7 +332,7 @@ ${actionText}`;
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 transition-colors">
       <Toaster position="top-center" richColors />
       {/* Bright Header with 3D Harmony Theme */}
-      <header className="bg-gradient-to-r from-green-400 via-green-500 to-emerald-500 border-b-4 border-white shadow-2xl">
+      <header className="bg-white border-b-4 border-gray-200 shadow-2xl">
         <div className="px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2">
             {/* Logo & Title - White Text on Green */}
@@ -341,10 +341,10 @@ ${actionText}`;
                 <img src="/logo.png" alt="Logo" className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl shadow-xl border-2 border-white" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide drop-shadow-md">
+                <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-wide drop-shadow-md">
                   Green Cafe
                 </h1>
-                <p className="text-xs sm:text-sm text-green-100 font-semibold flex items-center gap-1">
+                <p className="text-xs sm:text-sm text-gray-500 font-semibold flex items-center gap-1">
                   <span className="w-2 h-2 bg-white rounded-full animate-pulse shadow"></span>
                   {t('Branch Audit', 'تدقيق الفروع')}
                 </p>
@@ -415,7 +415,7 @@ ${actionText}`;
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('Score', 'النتيجة')}</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${ccpPassed && shortlist.pct >= 90 ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' : 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white'}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${ccpPassed && shortlist.pct >= 90 ? 'bg-gradient-to-r from-green-500 to-green-600 text-gray-900' : 'bg-gradient-to-r from-yellow-500 to-orange-500 text-gray-900'}`}>
                   {shortlist.pct >= 90 && ccpPassed ? t('PASS ✓', 'ناجح ✓') : t('PENDING', 'قيد')}
                 </span>
               </div>
@@ -496,7 +496,7 @@ ${actionText}`;
               { n: '4', t: 'PDF', c: 'bg-orange-500 shadow-lg shadow-orange-500/30', icon: '📄' },
             ].map((step, i) => (
               <div key={i} className="flex items-center">
-                <div className={`${step.c} text-white px-3 sm:px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg`}>
+                <div className={`${step.c} text-gray-900 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg`}>
                   <span>{step.icon}</span>
                   <span className="hidden sm:inline">{step.n}.</span>
                   <span>{step.t}</span>
@@ -654,12 +654,12 @@ ${actionText}`;
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{config.icon}</span>
                         <div>
-                          <h3 className="font-bold text-white text-base">{isArabic ? cat.nameAr : cat.name}</h3>
-                          <p className="text-white/70 text-xs">{cat.points.length} questions</p>
+                          <h3 className="font-bold text-gray-900 text-base">{isArabic ? cat.nameAr : cat.name}</h3>
+                          <p className="text-gray-900/70 text-xs">{cat.points.length} questions</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-black text-white">{catCalc.pct}%</div>
+                        <div className="text-2xl font-black text-gray-900">{catCalc.pct}%</div>
                         <div className="h-1.5 w-20 bg-white/30 rounded-full overflow-hidden">
                           <div className="h-full bg-white rounded-full transition-all duration-500" style={{ width: `${catCalc.pct}%` }} />
                         </div>
@@ -673,7 +673,7 @@ ${actionText}`;
                         {/* Question Header with Big Number */}
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-white text-lg shadow-md ${p.isCCP ? 'bg-gradient-to-br from-red-500 to-red-700' : 'bg-gradient-to-br from-green-500 to-green-700'}`}>
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-gray-900 text-lg shadow-md ${p.isCCP ? 'bg-gradient-to-br from-red-500 to-red-700' : 'bg-gradient-to-br from-green-500 to-green-700'}`}>
                               {p.id}
                             </div>
                             <div>
@@ -696,7 +696,7 @@ ${actionText}`;
                           </div>
                           {/* Score Indicator */}
                           {scores[p.id]?.score !== undefined && (
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-white shadow-md ${
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-gray-900 shadow-md ${
                               scores[p.id]?.score === 2 ? 'bg-gradient-to-br from-green-500 to-green-700' :
                               scores[p.id]?.score === 1 ? 'bg-gradient-to-br from-yellow-500 to-amber-600' :
                               scores[p.id]?.score === 0 ? 'bg-gradient-to-br from-red-500 to-red-700' :
@@ -740,7 +740,7 @@ ${actionText}`;
                             <input type="file" accept="image/*" ref={el => { if (el) fileInputRefs.current[p.id] = el }}
                               onChange={e => e.target.files?.[0] && handlePhoto(p.id, e.target.files[0])} className="hidden" id={`ph${p.id}`} />
                             <label htmlFor={`ph${p.id}`} className={`w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110 ${
-                              scores[p.id]?.photo ? 'bg-gradient-to-br from-green-500 to-green-700 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'
+                              scores[p.id]?.photo ? 'bg-gradient-to-br from-green-500 to-green-700 text-gray-900 shadow-lg' : 'bg-gray-100 hover:bg-gray-200'
                             }`}>
                               {scores[p.id]?.photo ? (
                                 <div className="w-8 h-8 rounded-lg overflow-hidden">
@@ -790,18 +790,18 @@ ${actionText}`;
               {auditMode === 'shortlist' ? (
                 <>
                   <button onClick={handleSubmit} disabled={!canSubmit || isSubmitting || !canPass}
-                    className="w-full py-5 rounded-2xl font-extrabold text-white bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-800 hover:to-emerald-800 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all active:scale-[0.98]">
+                    className="w-full py-5 rounded-2xl font-extrabold text-gray-900 bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-800 hover:to-emerald-800 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all active:scale-[0.98]">
                     {isSubmitting ? '...' : canPass ? t('تحميل PDF + خطة العمل', 'Download PDF + Plan') : !ccpPassed ? t('فشل CCP أولاً', 'Fix CCP First') : t('تحتاج 90%', 'Need 90%')}
                   </button>
                   {shortlist.max > 0 && shortlist.pct < 90 && (
-                    <button onClick={() => setAuditMode('full')} className="w-full py-4 rounded-2xl font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-md hover:shadow-lg transition-all">
+                    <button onClick={() => setAuditMode('full')} className="w-full py-4 rounded-2xl font-bold text-gray-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-md hover:shadow-lg transition-all">
                       {t('أكمل 50 سؤال ←', 'Complete 50 Q ←')}
                     </button>
                   )}
                 </>
               ) : (
                 <button onClick={handleSubmit} disabled={!canSubmit || isSubmitting}
-                  className="w-full py-5 rounded-2xl font-extrabold text-white bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-800 hover:to-emerald-800 disabled:from-gray-300 disabled:to-gray-400 shadow-lg hover:shadow-xl transition-all active:scale-[0.98]">
+                  className="w-full py-5 rounded-2xl font-extrabold text-gray-900 bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-800 hover:to-emerald-800 disabled:from-gray-300 disabled:to-gray-400 shadow-lg hover:shadow-xl transition-all active:scale-[0.98]">
                   {isSubmitting ? '...' : t('تحميل PDF + خطة العمل', 'Download PDF + Plan')}
                 </button>
               )}
@@ -815,7 +815,7 @@ ${actionText}`;
         <div className="max-w-md mx-auto px-4">
           <div className="flex items-center justify-center gap-2 mb-2 sm:mb-3">
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">G</span>
+              <span className="text-gray-900 font-bold">G</span>
             </div>
             <span className="text-sm sm:text-base font-bold text-gray-700">Green Cafe Egypt</span>
           </div>
