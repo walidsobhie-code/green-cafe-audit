@@ -415,13 +415,13 @@ ${actionText}`;
       {showHelp && (
         <div className="px-3 sm:px-4 pt-3 sm:pt-4">
           <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
-            <div className="px-3 py-2 bg-gradient-to-b from-blue-500 to-blue-600 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-blue-700">📝 1. {t('Fill', 'املأ')}</div>
+            <div className="px-3 py-2 bg-gradient-to-b from-green-400 to-green-600 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-green-700">📝 1. {t('Fill', 'املأ')}</div>
             <span className="text-gray-400">→</span>
-            <div className="px-3 py-2 bg-gradient-to-b from-purple-500 to-purple-600 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-purple-700">📊 2. {t('Score', 'نتيجة')}</div>
+            <div className="px-3 py-2 bg-gradient-to-b from-green-500 to-green-700 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-green-800">📊 2. {t('Score', 'نتيجة')}</div>
             <span className="text-gray-400">→</span>
-            <div className="px-3 py-2 bg-gradient-to-b from-green-500 to-green-600 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-green-700">✅ 3. {t('90%+', 'اجتياز')}</div>
+            <div className="px-3 py-2 bg-gradient-to-b from-emerald-500 to-emerald-700 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-emerald-800">✅ 3. {t('90%+', 'اجتياز')}</div>
             <span className="text-gray-400">→</span>
-            <div className="px-3 py-2 bg-gradient-to-b from-orange-500 to-orange-600 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-orange-700">📄 4. PDF</div>
+            <div className="px-3 py-2 bg-gradient-to-b from-teal-500 to-teal-700 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-teal-800">📄 4. PDF</div>
           </div>
           {/* Progress indicator based on current state */}
           <div className="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
