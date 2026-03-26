@@ -400,47 +400,49 @@ ${actionText}`;
           </div>
         )}
         
-        {/* Score Bar */}
+        {/* Score Bar - 3D Enhanced */}
         <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('Score', 'النتيجة')}</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${ccpPassed && shortlist.pct >= 90 ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}`}>
-                {shortlist.pct >= 90 && ccpPassed ? t('PASS', 'ناجح') : t('PENDING', 'قيد')}
-              </span>
-            </div>
-            {/* Circular Progress Ring */}
-            <div className="relative w-20 h-20">
-              <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
-                <path
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  className="text-gray-200"
-                />
-                <path
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeDasharray={`${shortlist.pct}, 100`}
-                  strokeLinecap="round"
-                  className={`${shortlist.pct >= 90 && ccpPassed ? 'text-green-500' : shortlist.pct >= 70 ? 'text-yellow-500' : 'text-red-500'} transition-all duration-500`}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-2xl font-black text-gray-900">{shortlist.pct}%</span>
+          <div className="bg-white rounded-xl p-3 shadow-lg border border-gray-100">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('Score', 'النتيجة')}</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${ccpPassed && shortlist.pct >= 90 ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' : 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white'}`}>
+                  {shortlist.pct >= 90 && ccpPassed ? t('PASS ✓', 'ناجح ✓') : t('PENDING', 'قيد')}
+                </span>
+              </div>
+              {/* 3D Circular Progress Ring */}
+              <div className="relative w-20 h-20 drop-shadow-xl">
+                <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    className="text-gray-100"
+                  />
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3.5"
+                    strokeDasharray={`${shortlist.pct}, 100`}
+                    strokeLinecap="round"
+                    className={`${shortlist.pct >= 90 && ccpPassed ? 'text-green-500' : shortlist.pct >= 70 ? 'text-yellow-500' : 'text-red-500'} transition-all duration-500`}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-2xl font-black text-gray-800 drop-shadow-sm">{shortlist.pct}%</span>
+                </div>
               </div>
             </div>
-          </div>
-          
-          {/* Progress Bar with Glow */}
-          <div className="h-2.5 sm:h-3 bg-gray-100 rounded-full overflow-hidden shadow-inner">
-            <div 
-              className={`h-full transition-all duration-500 rounded-full ${shortlist.pct >= 90 && ccpPassed ? 'bg-green-500 shadow-lg shadow-green-500/50' : shortlist.pct >= 70 ? 'bg-yellow-500 shadow-lg shadow-yellow-500/50' : 'bg-red-500 shadow-lg shadow-red-500/50'}`} 
-              style={{ width: `${shortlist.pct}%` }} 
-            />
+            
+            {/* 3D Progress Bar */}
+            <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden shadow-inner">
+              <div 
+                className={`h-full transition-all duration-500 rounded-full shadow-lg ${shortlist.pct >= 90 && ccpPassed ? 'bg-gradient-to-r from-green-400 to-green-600' : shortlist.pct >= 70 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : 'bg-gradient-to-r from-red-400 to-red-600'}`} 
+                style={{ width: `${shortlist.pct}%` }} 
+              />
+            </div>
           </div>
           
           {/* Priority Breakdown */}
@@ -448,28 +450,28 @@ ${actionText}`;
             <span>{shortlist.total}/{shortlist.max} pts</span>
             <span>CCP: {shortlist.ccpPct}%</span>
           </div>
-          {/* Priority Scores - Enhanced Visual */}
-          <div className="flex gap-2 mt-3">
-            <div className={`flex-1 rounded-xl px-3 py-2 text-center ${shortlist.priorityScores.CCP.pct >= 90 ? 'bg-green-100 border-2 border-green-400' : 'bg-red-50 border-2 border-red-200'}`}>
-              <div className="text-xs text-gray-500 font-bold">CCP</div>
-              <div className={`text-lg font-black ${shortlist.priorityScores.CCP.pct >= 90 ? 'text-green-600' : 'text-red-600'}`}>
+          {/* Priority Scores - 3D Enhanced Visual */}
+          <div className="grid grid-cols-3 gap-2 mt-3">
+            <div className={`relative rounded-xl px-2 py-2 text-center shadow-lg border-b-4 ${shortlist.priorityScores.CCP.pct >= 90 ? 'bg-gradient-to-b from-green-100 to-green-50 border-green-600' : 'bg-gradient-to-b from-red-100 to-red-50 border-red-600'}`}>
+              <div className="text-[10px] text-gray-500 font-bold">CCP</div>
+              <div className={`text-2xl font-black ${shortlist.priorityScores.CCP.pct >= 90 ? 'text-green-600' : 'text-red-600'}`}>
                 {shortlist.priorityScores.CCP.pct}%
               </div>
-              <div className="text-[10px] text-gray-400">{shortlist.priorityScores.CCP.passed}/{shortlist.priorityScores.CCP.max}</div>
+              <div className="text-[9px] text-gray-400">{shortlist.priorityScores.CCP.passed}/{shortlist.priorityScores.CCP.max}</div>
             </div>
-            <div className={`flex-1 rounded-xl px-3 py-2 text-center ${shortlist.priorityScores.HIGH.pct >= 70 ? 'bg-green-100 border-2 border-green-400' : 'bg-yellow-50 border-2 border-yellow-200'}`}>
-              <div className="text-xs text-gray-500 font-bold">HIGH</div>
-              <div className={`text-lg font-black ${shortlist.priorityScores.HIGH.pct >= 70 ? 'text-green-600' : 'text-yellow-600'}`}>
+            <div className={`relative rounded-xl px-2 py-2 text-center shadow-lg border-b-4 ${shortlist.priorityScores.HIGH.pct >= 70 ? 'bg-gradient-to-b from-green-100 to-green-50 border-green-600' : 'bg-gradient-to-b from-yellow-100 to-yellow-50 border-yellow-600'}`}>
+              <div className="text-[10px] text-gray-500 font-bold">HIGH</div>
+              <div className={`text-2xl font-black ${shortlist.priorityScores.HIGH.pct >= 70 ? 'text-green-600' : 'text-yellow-600'}`}>
                 {shortlist.priorityScores.HIGH.pct}%
               </div>
-              <div className="text-[10px] text-gray-400">{shortlist.priorityScores.HIGH.passed}/{shortlist.priorityScores.HIGH.max}</div>
+              <div className="text-[9px] text-gray-400">{shortlist.priorityScores.HIGH.passed}/{shortlist.priorityScores.HIGH.max}</div>
             </div>
-            <div className={`flex-1 rounded-xl px-3 py-2 text-center ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'bg-green-100 border-2 border-green-400' : 'bg-gray-50 border-2 border-gray-200'}`}>
-              <div className="text-xs text-gray-500 font-bold">STD</div>
-              <div className={`text-lg font-black ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'text-green-600' : 'text-gray-600'}`}>
+            <div className={`relative rounded-xl px-2 py-2 text-center shadow-lg border-b-4 ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'bg-gradient-to-b from-green-100 to-green-50 border-green-600' : 'bg-gradient-to-b from-gray-100 to-gray-50 border-gray-500'}`}>
+              <div className="text-[10px] text-gray-500 font-bold">STD</div>
+              <div className={`text-2xl font-black ${shortlist.priorityScores.STANDARD.pct >= 70 ? 'text-green-600' : 'text-gray-600'}`}>
                 {shortlist.priorityScores.STANDARD.pct}%
               </div>
-              <div className="text-[10px] text-gray-400">{shortlist.priorityScores.STANDARD.passed}/{shortlist.priorityScores.STANDARD.max}</div>
+              <div className="text-[9px] text-gray-400">{shortlist.priorityScores.STANDARD.passed}/{shortlist.priorityScores.STANDARD.max}</div>
             </div>
           </div>
         </div>
