@@ -327,17 +327,17 @@ ${actionText}`;
     return undefined;
   };
   
-  // Get all points sorted by ID - single flat list 1,2,3...
-  const allPointsSorted = (auditMode === 'shortlist'
-    ? auditCategories.filter(cat => !cat.shortlistOnly)
-    : auditCategories
-  ).flatMap(cat => cat.points).sort((a, b) => a.id - b.id);
+  // Get all points sorted by ID - filter to 25 or 50 based on mode
+  const allPointsSorted = auditCategories
+    .flatMap(cat => cat.points)
+    .filter(p => auditMode === 'shortlist' ? p.id <= 25 : p.id > 0)
+    .sort((a, b) => a.id - b.id);
   
   // Single category for simple numbering
   const categoriesToShow = [{
     id: 'all',
-    name: '📋 All Questions',
-    nameAr: '📋 جميع الأسئلة',
+    name: auditMode === 'shortlist' ? '📋 25 Point Audit' : '📋 50 Point Audit',
+    nameAr: auditMode === 'shortlist' ? '📋 تدقيق 25 نقطة' : '📋 تدقيق 50 نقطة',
     priority: 'STANDARD' as Priority,
     points: allPointsSorted
   }];

@@ -213,12 +213,9 @@ export const auditCategories: AuditCategory[] = [
 ];
 
 // Shortlist = 25 points (5 CCP + 8 HIGH + 12 STANDARD)
+// Shortlist = first 25 questions (IDs 1-25)
 export function getShortlistPoints(): number[] {
-  const points: number[] = [];
-  auditCategories.forEach(cat => {
-    cat.points.forEach(p => points.push(p.id));
-  });
-  return points.sort((a, b) => a - b);
+  return Array.from({length: 25}, (_, i) => i + 1);
 }
 
 // Full audit = 50 points (all original questions)
