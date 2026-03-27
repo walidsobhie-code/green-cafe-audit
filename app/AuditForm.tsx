@@ -358,7 +358,7 @@ ${actionText}`;
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 transition-colors">
       <Toaster position="top-center" richColors />
       {/* Clean Header */}
-      <header className="bg-white border-b-2 border-gray-200 shadow-lg">
+      <header className="bg-white border-b-4 border-gray-200 shadow-2xl">
         <div className="px-3 sm:px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             {/* Left: Logo + Title */}
@@ -377,13 +377,13 @@ ${actionText}`;
                   📝 {t('Clear', 'مسح')}
                 </button>
               )}
-              <button onClick={() => setShowSearch(!showSearch)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600">
+              <button onClick={() => setShowSearch(!showSearch)} className="p-2.5 bg-gradient-to-b from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 rounded-xl text-gray-600 shadow-md border-2 border-gray-200 hover:shadow-lg">
                 <Search className="w-4 h-4" />
               </button>
-              <a href="/dashboard" className="px-3 py-1.5 bg-green-500 hover:bg-green-600 rounded-lg text-xs font-bold text-white">
+              <a href="/dashboard" className="px-3 py-2.5 bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl text-xs font-bold text-white shadow-lg border-b-2 border-green-700 hover:shadow-xl">
                 📊 {t('Dashboard', 'لوحة')}
               </a>
-              <select value={auditMode} onChange={(e) => setAuditMode(e.target.value as 'shortlist' | 'full')} className="px-2 py-1.5 bg-gray-100 border border-gray-200 rounded-lg text-xs font-bold text-gray-700">
+              <select value={auditMode} onChange={(e) => setAuditMode(e.target.value as 'shortlist' | 'full')} className="px-2 py-2.5 bg-gradient-to-b from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl text-xs font-bold text-gray-700 shadow-md">
                 <option value="shortlist">{t('25', '25')}</option>
                 <option value="full">{t('50', '50')}</option>
               </select>
@@ -403,7 +403,7 @@ ${actionText}`;
         
         {/* Score Display */}
         <div className="px-3 pb-3">
-          <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3 border border-gray-200">
+          <div className="flex items-center justify-between bg-gradient-to-b from-gray-50 to-white rounded-2xl p-4 shadow-xl border-2 border-gray-100">
             <div className="flex items-center gap-3">
               <span className="text-sm font-bold text-gray-500">{t('Score', 'النتيجة')}</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${ccpPassed && currentCalc.pct >= 90 ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}`}>
@@ -416,8 +416,8 @@ ${actionText}`;
                 <div className="text-[10px] text-gray-400">{currentCalc.total}/{currentCalc.max}</div>
               </div>
               {/* Progress bar */}
-              <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className={`h-full ${currentCalc.pct >= 90 ? 'bg-green-500' : currentCalc.pct >= 70 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${currentCalc.pct}%` }} />
+              <div className="w-28 h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                <div className={`h-full transition-all duration-500 rounded-full shadow-md ${currentCalc.pct >= 90 ? 'bg-green-500' : currentCalc.pct >= 70 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${currentCalc.pct}%` }} />
               </div>
             </div>
           </div>
