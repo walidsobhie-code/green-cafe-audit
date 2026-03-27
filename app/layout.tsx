@@ -11,6 +11,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Green Cafe Audit | تدقيق جرين كافيه",
   description: "50-Point Bilingual Audit Checklist for Green Cafe Branch Visits - Conduct comprehensive branch audits with this detailed checklist covering customer service, cleanliness, food quality, and more.",
+  manifest: "/manifest.json",
   metadataBase: new URL(BASE_URL),
   alternates: {
     canonical: BASE_URL,
