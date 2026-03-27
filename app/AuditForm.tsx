@@ -21,9 +21,9 @@ interface SavedDraft {
 }
 
 const scoreButtons = [
-  { s: 2, l: '✓', c: 'bg-gradient-to-br from-green-500 to-green-700 text-gray-900' },
+  { s: 2, l: '😊', c: 'bg-gradient-to-br from-green-400 to-green-600 text-white' },
   { s: 1, l: '△', c: 'bg-gradient-to-br from-yellow-500 to-amber-600 text-gray-900' },
-  { s: 0, l: '✗', c: 'bg-gradient-to-br from-red-500 to-red-700 text-gray-900' },
+  { s: 0, l: '😢', c: 'bg-gradient-to-br from-red-400 to-red-600 text-white' },
   { s: -1, l: 'N', c: 'bg-gray-300 text-gray-600' },
 ];
 
@@ -490,19 +490,6 @@ ${actionText}`;
       )}
 
       {/* Draft Restore Banner */}
-      {hasDraft && !submitted && (
-        <div className="px-3 sm:px-4 pt-3">
-          <div className="bg-amber-100 border-2 border-amber-300 rounded-xl sm:rounded-2xl p-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">📝</span>
-              <span className="text-sm font-bold text-amber-800">{t('Draft Saved', 'مسودة محفوظة')}</span>
-            </div>
-            <button onClick={clearDraft} className="text-xs font-bold text-amber-600 hover:text-amber-800 px-2 py-1">
-              {t('Clear', 'مسح')}
-            </button>
-          </div>
-        </div>
-      )}
 
       <main className="px-3 sm:px-4 py-4 sm:py-5 pb-28">
         {submitted ? (
