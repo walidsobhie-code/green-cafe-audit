@@ -29,7 +29,7 @@ const scoreButtons = [
 
 export default function AuditForm() {
   const [lang, setLang] = useState<'en' | 'ar'>('en');
-  const [showHelp, setShowHelp] = useState(true);
+  const [showHelp, setShowHelp] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [copied, setCopied] = useState(false);
@@ -372,6 +372,11 @@ ${actionText}`;
             
             {/* Right: Controls */}
             <div className="flex items-center gap-2">
+              {hasDraft && !submitted && (
+                <button onClick={clearDraft} className="px-2 py-1.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg text-xs font-bold text-amber-700" title="Clear draft">
+                  📝 {t('Clear', 'مسح')}
+                </button>
+              )}
               <button onClick={() => setShowSearch(!showSearch)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600">
                 <Search className="w-4 h-4" />
               </button>
@@ -384,6 +389,9 @@ ${actionText}`;
               </select>
               <button onClick={() => setLang(isArabic ? 'en' : 'ar')} className="px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-bold text-gray-700">
                 {isArabic ? 'EN' : 'عربي'}
+              </button>
+              <button onClick={() => setShowHelp(!showHelp)} className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center text-sm font-bold text-gray-600">
+                ?
               </button>
             </div>
           </div>
