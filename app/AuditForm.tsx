@@ -461,24 +461,6 @@ ${actionText}`;
       </header>
 
       {/* Keep just one Steps display */}
-      {showHelp && (
-        <div className="px-3 sm:px-4 pt-3 sm:pt-4">
-          <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
-            <div className="px-3 py-2 bg-gradient-to-b from-green-400 to-green-600 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-green-700">📝 1. {t('Fill', 'املأ')}</div>
-            <span className="text-gray-400">→</span>
-            <div className="px-3 py-2 bg-gradient-to-b from-green-500 to-green-700 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-green-800">📊 2. {t('Score', 'نتيجة')}</div>
-            <span className="text-gray-400">→</span>
-            <div className="px-3 py-2 bg-gradient-to-b from-emerald-500 to-emerald-700 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-emerald-800">✅ 3. {t('90%+', 'اجتياز')}</div>
-            <span className="text-gray-400">→</span>
-            <div className="px-3 py-2 bg-gradient-to-b from-teal-500 to-teal-700 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-teal-800">📄 4. PDF</div>
-          </div>
-          {/* Progress indicator based on current state */}
-          <div className="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 transition-all duration-500"
-              style={{ 
-                width: submitted ? '100%' : scores && Object.keys(scores).length > 0 ? '50%' : '25%' 
-              }}
             />
           </div>
         </div>
