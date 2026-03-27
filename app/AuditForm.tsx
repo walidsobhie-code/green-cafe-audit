@@ -460,12 +460,6 @@ ${actionText}`;
         </div>
       </header>
 
-      {/* Keep just one Steps display */}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Draft Restore Banner */}
       {hasDraft && !submitted && (
         <div className="px-3 sm:px-4 pt-3">
