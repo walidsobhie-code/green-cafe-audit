@@ -390,9 +390,6 @@ ${actionText}`;
               <button onClick={() => setLang(isArabic ? 'en' : 'ar')} className="px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-bold text-gray-700">
                 {isArabic ? 'EN' : 'عربي'}
               </button>
-              <button onClick={() => setShowHelp(!showHelp)} className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center text-sm font-bold text-gray-600">
-                ?
-              </button>
             </div>
           </div>
         </div>
