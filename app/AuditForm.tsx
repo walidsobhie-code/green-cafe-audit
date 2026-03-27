@@ -21,9 +21,9 @@ interface SavedDraft {
 }
 
 const scoreButtons = [
-  { s: 2, l: '😊', c: 'bg-gradient-to-br from-green-400 to-green-600 text-white' },
+  { s: 2, l: '✓', c: 'bg-gradient-to-br from-green-500 to-green-700 text-gray-900' },
   { s: 1, l: '△', c: 'bg-gradient-to-br from-yellow-500 to-amber-600 text-gray-900' },
-  { s: 0, l: '😢', c: 'bg-gradient-to-br from-red-400 to-red-600 text-white' },
+  { s: 0, l: '✗', c: 'bg-gradient-to-br from-red-500 to-red-700 text-gray-900' },
   { s: -1, l: 'N', c: 'bg-gray-300 text-gray-600' },
 ];
 
@@ -661,7 +661,7 @@ ${actionText}`;
                               scores[p.id]?.score === 0 ? 'bg-gradient-to-br from-red-500 to-red-700' :
                               'bg-gray-300'
                             }`}>
-                              {scores[p.id]?.score === 2 ? '✓' : scores[p.id]?.score === 1 ? '△' : scores[p.id]?.score === 0 ? '✗' : '?'}
+                              {scores[p.id]?.score === 2 ? '😊' : scores[p.id]?.score === 1 ? '😐' : scores[p.id]?.score === 0 ? '😢' : '?'}
                             </div>
                           )}
                         </div>
