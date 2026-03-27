@@ -53,6 +53,7 @@ export default function RootLayout({
     <html lang="ar-SA" dir="rtl">
       <head>
         <link rel="canonical" href={BASE_URL} />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="antialiased bg-gray-100">
         {children}

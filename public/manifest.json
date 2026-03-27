@@ -1,0 +1,22 @@
+{
+  "name": "Green Cafe Audit",
+  "short_name": "Green Cafe",
+  "description": "50-Point Bilingual Audit Checklist for Green Cafe Branch Visits",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
