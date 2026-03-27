@@ -162,23 +162,27 @@ export default function AuditForm() {
     };
   };
 
-  const shortlist = calc(getShortlistPoints(), auditCategories);
+  const shortlistIds = getShortlistPoints();
   const fullIds = getFullIds();
+  const shortlist = calc(shortlistIds, auditCategories);
   const full = calc(fullIds, auditCategories);
   
+  // Use correct calculation based on audit mode
+  const currentCalc = auditMode === 'shortlist' ? shortlist : full;
+  
   // CCP must pass = no failed CCPs (score < 2)
-  const ccpPassed = shortlist.ccpFailed.length === 0;
+  const ccpPassed = currentCalc.ccpFailed.length === 0;
 
   // Pass requires: 90%+ score AND all CCPs passed
   const canSubmit = formData.branchName.trim() !== '' && formData.auditorName.trim() !== '';
-  const canPass = shortlist.pct >= 90 && ccpPassed;
+  const canPass = currentCalc.pct >= 90 && ccpPassed;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
     
     // Check CCP requirement
     if (!ccpPassed) {
-      alert(`❌ Cannot pass: Failed ${shortlist.ccpFailed.length} Critical Control Point(s)\n\nFix CCP failures first before submitting.`);
+      alert(`❌ Cannot pass: Failed ${currentCalc.ccpFailed.length} Critical Control Point(s)\n\nFix CCP failures first before submitting.`);
       return;
     }
     
@@ -197,7 +201,7 @@ export default function AuditForm() {
       const submission: AuditSubmission = {
         id: Date.now().toString(), branchName: formData.branchName, branchNameAr: formData.branchName,
         auditorName: formData.auditorName, auditorNameAr: formData.auditorName, date: formData.date,
-        scores, totalScore: shortlist.total + full.total, percentage: shortlist.pct, actionItems,
+        scores, totalScore: currentCalc.total + full.total, percentage: currentCalc.pct, actionItems,
         emailList: [], lang: lang
       };
       blob = generatePDFBlob(submission);
@@ -230,7 +234,7 @@ export default function AuditForm() {
 Branch: ${formData.branchName}
 Auditor: ${formData.auditorName}
 Date: ${formData.date}
-Score: ${shortlist.pct}% (${shortlist.total}/${shortlist.max})
+Score: ${currentCalc.pct}% (${currentCalc.total}/${currentCalc.max})
 
 Action Items:
 ${actionText}`;
@@ -248,7 +252,7 @@ ${actionText}`;
               branchName: formData.branchName,
               auditorName: formData.auditorName,
               date: formData.date,
-              score: `${shortlist.pct}% (${shortlist.total}/${shortlist.max})`,
+              score: `${currentCalc.pct}% (${currentCalc.total}/${currentCalc.max})`,
               actionItems: actionText,
               reportText: reportText,
               pdfBase64: pdfBase64 || undefined
@@ -300,9 +304,9 @@ ${actionText}`;
       branchName: formData.branchName,
       auditorName: formData.auditorName,
       date: formData.date,
-      score: shortlist.total,
-      percentage: shortlist.pct,
-      ccpPercentage: shortlist.ccpPct,
+      score: currentCalc.total,
+      percentage: currentCalc.pct,
+      ccpPercentage: currentCalc.ccpPct,
       passed: canPass,
       auditMode: auditMode,
       categories: categoryData,
@@ -314,9 +318,6 @@ ${actionText}`;
 
   const isArabic = lang === 'ar';
   const t = (ar: string, en: string) => isArabic ? ar : en;
-  // Shortlist = first 25 questions (ids 1-25)
-  // Full = all 50 questions
-  const shortlistIds = getShortlistPoints();
 
   // Get point details helper
   const getPoint = (id: number): AuditPoint | undefined => {
@@ -400,18 +401,18 @@ ${actionText}`;
           <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3 border border-gray-200">
             <div className="flex items-center gap-3">
               <span className="text-sm font-bold text-gray-500">{t('Score', 'النتيجة')}</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${ccpPassed && shortlist.pct >= 90 ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}`}>
-                {shortlist.pct >= 90 && ccpPassed ? 'PASS ✓' : 'PENDING'}
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${ccpPassed && currentCalc.pct >= 90 ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}`}>
+                {currentCalc.pct >= 90 && ccpPassed ? 'PASS ✓' : 'PENDING'}
               </span>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <div className="text-2xl font-black text-gray-900">{shortlist.pct}%</div>
-                <div className="text-[10px] text-gray-400">{shortlist.total}/{shortlist.max}</div>
+                <div className="text-2xl font-black text-gray-900">{currentCalc.pct}%</div>
+                <div className="text-[10px] text-gray-400">{currentCalc.total}/{currentCalc.max}</div>
               </div>
               {/* Progress bar */}
               <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className={`h-full ${shortlist.pct >= 90 ? 'bg-green-500' : shortlist.pct >= 70 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${shortlist.pct}%` }} />
+                <div className={`h-full ${currentCalc.pct >= 90 ? 'bg-green-500' : currentCalc.pct >= 70 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${currentCalc.pct}%` }} />
               </div>
             </div>
           </div>
@@ -426,7 +427,7 @@ ${actionText}`;
               { id: 'service', label: 'الخدمة', color: 'blue' },
               { id: 'hygiene', label: 'النظافة', color: 'green' },
             ].map(cat => {
-              const catData = (shortlist.categoryScores as Record<string, {total: number, max: number, pct: number}>)?.[cat.id] || { total: 0, max: 0, pct: 0 };
+              const catData = (currentCalc.categoryScores as Record<string, {total: number, max: number, pct: number}>)?.[cat.id] || { total: 0, max: 0, pct: 0 };
               const pct = catData?.pct || 0;
               const isPass = pct >= 90;
               const isWarn = pct >= 70 && pct < 90;
@@ -497,8 +498,8 @@ ${actionText}`;
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('تم!', 'Done!')}</h2>
             <p className="text-gray-500 mb-5">{t('تم تحميل PDF', 'PDF downloaded')}</p>
-            <div className={`text-4xl font-extrabold ${shortlist.pct >= 90 ? 'text-green-600' : 'text-yellow-600'}`}>
-              {shortlist.pct}%
+            <div className={`text-4xl font-extrabold ${currentCalc.pct >= 90 ? 'text-green-600' : 'text-yellow-600'}`}>
+              {currentCalc.pct}%
             </div>
           </div>
         ) : (
@@ -544,29 +545,29 @@ ${actionText}`;
               <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5"></div>
               <div className="relative">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('النتيجة', 'Score')}</p>
-                <p className="text-3xl sm:text-4xl font-black text-gray-900">{shortlist.total}<span className="text-gray-300 text-xl sm:text-2xl">/{shortlist.max}</span></p>
+                <p className="text-3xl sm:text-4xl font-black text-gray-900">{currentCalc.total}<span className="text-gray-300 text-xl sm:text-2xl">/{currentCalc.max}</span></p>
               </div>
-              <div className={`relative px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-extrabold text-xl sm:text-2xl shadow-lg ${shortlist.pct >= 90 ? 'bg-gradient-to-r from-green-600 to-emerald-600 shadow-green-500/30' : shortlist.pct >= 70 ? 'bg-gradient-to-r from-yellow-500 to-amber-500 shadow-yellow-500/30' : 'bg-gradient-to-r from-red-600 to-rose-600 shadow-red-500/30'}`}>
-                {shortlist.pct}%
+              <div className={`relative px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-extrabold text-xl sm:text-2xl shadow-lg ${currentCalc.pct >= 90 ? 'bg-gradient-to-r from-green-600 to-emerald-600 shadow-green-500/30' : currentCalc.pct >= 70 ? 'bg-gradient-to-r from-yellow-500 to-amber-500 shadow-yellow-500/30' : 'bg-gradient-to-r from-red-600 to-rose-600 shadow-red-500/30'}`}>
+                {currentCalc.pct}%
               </div>
             </div>
 
             {auditMode === 'shortlist' && (
-              <div className={`rounded-2xl p-4 mb-5 flex flex-col gap-2 shadow-sm ${shortlist.pct >= 90 && ccpPassed ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200' : 'bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200'}`}>
+              <div className={`rounded-2xl p-4 mb-5 flex flex-col gap-2 shadow-sm ${currentCalc.pct >= 90 && ccpPassed ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200' : 'bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200'}`}>
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{shortlist.pct >= 90 && ccpPassed ? '🎉' : '⚠️'}</span>
-                  <span className={`font-bold text-sm ${shortlist.pct >= 90 && ccpPassed ? 'text-green-700' : 'text-red-700'}`}>
-                    {shortlist.pct >= 90 && ccpPassed ? t('ممتاز! تم اجتياز التفتيش', 'Excellent! Audit Passed') : t('تحتاج 90% للاجتياز', 'Need 90% to Pass')}
+                  <span className="text-2xl">{currentCalc.pct >= 90 && ccpPassed ? '🎉' : '⚠️'}</span>
+                  <span className={`font-bold text-sm ${currentCalc.pct >= 90 && ccpPassed ? 'text-green-700' : 'text-red-700'}`}>
+                    {currentCalc.pct >= 90 && ccpPassed ? t('ممتاز! تم اجتياز التفتيش', 'Excellent! Audit Passed') : t('تحتاج 90% للاجتياز', 'Need 90% to Pass')}
                   </span>
                 </div>
                 {/* CCP Status */}
                 <div className="flex items-center gap-2 text-xs">
                   <span className={`px-2 py-1 rounded font-bold ${ccpPassed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    CCP: {shortlist.ccpPct}%
+                    CCP: {currentCalc.ccpPct}%
                   </span>
                   {!ccpPassed && (
                     <span className="text-red-600">
-                      {t('فشل', 'Failed')}: Q{shortlist.ccpFailed.join(', Q')}
+                      {t('فشل', 'Failed')}: Q{currentCalc.ccpFailed.join(', Q')}
                     </span>
                   )}
                 </div>
@@ -750,7 +751,7 @@ ${actionText}`;
                     className="w-full py-5 rounded-2xl font-extrabold text-gray-900 bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-800 hover:to-emerald-800 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all active:scale-[0.98]">
                     {isSubmitting ? '...' : canPass ? t('تحميل PDF + خطة العمل', 'Download PDF + Plan') : !ccpPassed ? t('فشل CCP أولاً', 'Fix CCP First') : t('تحتاج 90%', 'Need 90%')}
                   </button>
-                  {shortlist.max > 0 && shortlist.pct < 90 && (
+                  {currentCalc.max > 0 && currentCalc.pct < 90 && (
                     <button onClick={() => setAuditMode('full')} className="w-full py-4 rounded-2xl font-bold text-gray-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-md hover:shadow-lg transition-all">
                       {t('أكمل 50 سؤال ←', 'Complete 50 Q ←')}
                     </button>
