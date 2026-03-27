@@ -375,13 +375,8 @@ ${actionText}`;
               <button onClick={() => setShowSearch(!showSearch)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600">
                 <Search className="w-4 h-4" />
               </button>
-              {hasDraft && !submitted && (
-                <button onClick={clearDraft} className="px-2 py-1.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg text-xs font-bold text-amber-700" title="Clear draft">
-                  📝
-                </button>
-              )}
               <a href="/dashboard" className="px-3 py-1.5 bg-green-500 hover:bg-green-600 rounded-lg text-xs font-bold text-white">
-                📊
+                📊 {t('Dashboard', 'لوحة')}
               </a>
               <select value={auditMode} onChange={(e) => setAuditMode(e.target.value as 'shortlist' | 'full')} className="px-2 py-1.5 bg-gray-100 border border-gray-200 rounded-lg text-xs font-bold text-gray-700">
                 <option value="shortlist">{t('25', '25')}</option>
@@ -413,7 +408,7 @@ ${actionText}`;
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <div className="text-2xl font-black text-gray-900">{currentCalc.pct}%</div>
-                <div className="text-xs text-gray-600">{currentCalc.total}/{currentCalc.max}</div>
+                <div className="text-[10px] text-gray-400">{currentCalc.total}/{currentCalc.max}</div>
               </div>
               {/* Progress bar */}
               <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -455,8 +450,8 @@ ${actionText}`;
                     </div>
                   </div>
                   <div className="text-center mt-1">
-                    <span className="text-xs font-bold text-gray-600 block">{cat.label}</span>
-                    <span className="text-xs text-gray-500">{pointCount}pts</span>
+                    <span className="text-[9px] font-bold text-gray-500 block">{cat.label}</span>
+                    <span className="text-[8px] text-gray-400">{pointCount}pts</span>
                   </div>
                 </div>
               );
@@ -464,6 +459,45 @@ ${actionText}`;
           </div>
         </div>
       </header>
+
+      {/* Keep just one Steps display */}
+      {showHelp && (
+        <div className="px-3 sm:px-4 pt-3 sm:pt-4">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+            <div className="px-3 py-2 bg-gradient-to-b from-green-400 to-green-600 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-green-700">📝 1. {t('Fill', 'املأ')}</div>
+            <span className="text-gray-400">→</span>
+            <div className="px-3 py-2 bg-gradient-to-b from-green-500 to-green-700 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-green-800">📊 2. {t('Score', 'نتيجة')}</div>
+            <span className="text-gray-400">→</span>
+            <div className="px-3 py-2 bg-gradient-to-b from-emerald-500 to-emerald-700 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-emerald-800">✅ 3. {t('90%+', 'اجتياز')}</div>
+            <span className="text-gray-400">→</span>
+            <div className="px-3 py-2 bg-gradient-to-b from-teal-500 to-teal-700 text-white rounded-xl text-xs font-bold shadow-lg border-b-2 border-teal-800">📄 4. PDF</div>
+          </div>
+          {/* Progress indicator based on current state */}
+          <div className="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 transition-all duration-500"
+              style={{ 
+                width: submitted ? '100%' : scores && Object.keys(scores).length > 0 ? '50%' : '25%' 
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Draft Restore Banner */}
+      {hasDraft && !submitted && (
+        <div className="px-3 sm:px-4 pt-3">
+          <div className="bg-amber-100 border-2 border-amber-300 rounded-xl sm:rounded-2xl p-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">📝</span>
+              <span className="text-sm font-bold text-amber-800">{t('Draft Saved', 'مسودة محفوظة')}</span>
+            </div>
+            <button onClick={clearDraft} className="text-xs font-bold text-amber-600 hover:text-amber-800 px-2 py-1">
+              {t('Clear', 'مسح')}
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="px-3 sm:px-4 py-4 sm:py-5 pb-28">
         {submitted ? (
@@ -481,10 +515,10 @@ ${actionText}`;
           <>
             {/* Branch Info - Mobile Responsive */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-5 mb-4 sm:mb-5 border border-gray-100/80">
-              <h2 className="text-base sm:text-sm font-bold text-gray-800 mb-3 sm:mb-3 flex items-center gap-2">
+              <h3 className="text-base sm:text-sm font-bold text-gray-800 mb-3 sm:mb-3 flex items-center gap-2">
                 <span className="w-1.5 h-5 sm:h-6 bg-green-600 rounded-full inline-block"></span>
                 {t('معلومات التفتيش', 'Inspection Details')}
-              </h2>
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('الفرع', 'Branch')} *</label>
@@ -622,7 +656,7 @@ ${actionText}`;
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-gray-600 font-medium uppercase tracking-wider mt-1">
+                              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1">
                                 {isArabic ? p.categoryAr : p.category}
                               </p>
                             </div>
@@ -706,7 +740,7 @@ ${actionText}`;
                             className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-3 py-2 text-sm text-gray-700 focus:border-green-400 outline-none resize-none transition-all"
                           />
                           {scores[p.id]?.note && (
-                            <span className="absolute bottom-2 right-2 text-xs text-gray-600">
+                            <span className="absolute bottom-2 right-2 text-[10px] text-gray-400">
                               {scores[p.id]?.note.length}/200
                             </span>
                           )}
