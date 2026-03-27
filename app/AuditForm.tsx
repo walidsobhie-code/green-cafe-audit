@@ -408,7 +408,7 @@ ${actionText}`;
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <div className="text-2xl font-black text-gray-900">{currentCalc.pct}%</div>
-                <div className="text-[10px] text-gray-400">{currentCalc.total}/{currentCalc.max}</div>
+                <div className="text-xs text-gray-600">{currentCalc.total}/{currentCalc.max}</div>
               </div>
               {/* Progress bar */}
               <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -450,8 +450,8 @@ ${actionText}`;
                     </div>
                   </div>
                   <div className="text-center mt-1">
-                    <span className="text-[9px] font-bold text-gray-500 block">{cat.label}</span>
-                    <span className="text-[8px] text-gray-400">{pointCount}pts</span>
+                    <span className="text-xs font-bold text-gray-600 block">{cat.label}</span>
+                    <span className="text-xs text-gray-500">{pointCount}pts</span>
                   </div>
                 </div>
               );
@@ -491,10 +491,10 @@ ${actionText}`;
           <>
             {/* Branch Info - Mobile Responsive */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-5 mb-4 sm:mb-5 border border-gray-100/80">
-              <h3 className="text-base sm:text-sm font-bold text-gray-800 mb-3 sm:mb-3 flex items-center gap-2">
+              <h2 className="text-base sm:text-sm font-bold text-gray-800 mb-3 sm:mb-3 flex items-center gap-2">
                 <span className="w-1.5 h-5 sm:h-6 bg-green-600 rounded-full inline-block"></span>
                 {t('معلومات التفتيش', 'Inspection Details')}
-              </h3>
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('الفرع', 'Branch')} *</label>
@@ -632,7 +632,7 @@ ${actionText}`;
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1">
+                              <p className="text-xs text-gray-600 font-medium uppercase tracking-wider mt-1">
                                 {isArabic ? p.categoryAr : p.category}
                               </p>
                             </div>
@@ -716,7 +716,7 @@ ${actionText}`;
                             className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-3 py-2 text-sm text-gray-700 focus:border-green-400 outline-none resize-none transition-all"
                           />
                           {scores[p.id]?.note && (
-                            <span className="absolute bottom-2 right-2 text-[10px] text-gray-400">
+                            <span className="absolute bottom-2 right-2 text-xs text-gray-600">
                               {scores[p.id]?.note.length}/200
                             </span>
                           )}
