@@ -465,11 +465,6 @@ ${actionText}`;
         </div>
       </header>
 
-      {/* Draft Restore Banner */}
-          </div>
-        </div>
-      )}
-
       <main className="px-3 sm:px-4 py-4 sm:py-5 pb-28">
         {submitted ? (
           <div className="bg-white rounded-3xl shadow-xl p-10 text-center border border-gray-100">
