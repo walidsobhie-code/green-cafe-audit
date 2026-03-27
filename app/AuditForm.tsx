@@ -375,8 +375,13 @@ ${actionText}`;
               <button onClick={() => setShowSearch(!showSearch)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600">
                 <Search className="w-4 h-4" />
               </button>
+              {hasDraft && !submitted && (
+                <button onClick={clearDraft} className="px-2 py-1.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg text-xs font-bold text-amber-700" title="Clear draft">
+                  📝
+                </button>
+              )}
               <a href="/dashboard" className="px-3 py-1.5 bg-green-500 hover:bg-green-600 rounded-lg text-xs font-bold text-white">
-                📊 {t('Dashboard', 'لوحة')}
+                📊
               </a>
               <select value={auditMode} onChange={(e) => setAuditMode(e.target.value as 'shortlist' | 'full')} className="px-2 py-1.5 bg-gray-100 border border-gray-200 rounded-lg text-xs font-bold text-gray-700">
                 <option value="shortlist">{t('25', '25')}</option>
@@ -461,16 +466,6 @@ ${actionText}`;
       </header>
 
       {/* Draft Restore Banner */}
-      {hasDraft && !submitted && (
-        <div className="px-3 sm:px-4 pt-3">
-          <div className="bg-amber-100 border-2 border-amber-300 rounded-xl sm:rounded-2xl p-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">📝</span>
-              <span className="text-sm font-bold text-amber-800">{t('Draft Saved', 'مسودة محفوظة')}</span>
-            </div>
-            <button onClick={clearDraft} className="text-xs font-bold text-amber-600 hover:text-amber-800 px-2 py-1">
-              {t('Clear', 'مسح')}
-            </button>
           </div>
         </div>
       )}
