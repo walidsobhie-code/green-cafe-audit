@@ -54,6 +54,8 @@ export default function RootLayout({
     <html lang="ar-SA" dir="rtl">
       <head>
         <link rel="canonical" href={BASE_URL} />
+        <link rel="preconnect" href="https://vercel.com" />
+        <link rel="dns-prefetch" href="https://vercel.com" />
       </head>
       <body className="antialiased bg-gray-100">
         {children}

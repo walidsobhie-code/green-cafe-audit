@@ -64,7 +64,7 @@ export default function Dashboard() {
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="Logo" className="w-10 h-10 rounded-lg shadow" />
+              <img src="/logo.png" alt="Green Cafe logo" className="w-10 h-10 rounded-lg shadow" />
               <div>
                 <h1 className="text-lg font-bold text-gray-800">Green Cafe</h1>
                 <p className="text-xs text-gray-500">Dashboard & Analytics</p>

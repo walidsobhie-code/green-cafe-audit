@@ -363,7 +363,7 @@ ${actionText}`;
           <div className="flex items-center justify-between gap-3">
             {/* Left: Logo + Title */}
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="Logo" className="w-12 h-12 rounded-xl shadow-md" />
+              <img src="/logo.png" alt="Green Cafe" className="w-12 h-12 rounded-xl shadow-md" />
               <div>
                 <h1 className="text-xl font-black text-gray-900">Green Cafe</h1>
                 <p className="text-xs text-gray-500 font-medium">{t('Branch Audit', 'تدقيق الفروع')}</p>
@@ -507,10 +507,10 @@ ${actionText}`;
           <>
             {/* Branch Info - Mobile Responsive */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-5 mb-4 sm:mb-5 border border-gray-100/80">
-              <h3 className="text-base sm:text-sm font-bold text-gray-800 mb-3 sm:mb-3 flex items-center gap-2">
+              <h2 className="text-base sm:text-sm font-bold text-gray-800 mb-3 sm:mb-3 flex items-center gap-2">
                 <span className="w-1.5 h-5 sm:h-6 bg-green-600 rounded-full inline-block"></span>
                 {t('معلومات التفتيش', 'Inspection Details')}
-              </h3>
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('الفرع', 'Branch')} *</label>
