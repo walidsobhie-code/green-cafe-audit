@@ -39,6 +39,7 @@ export default function AuditForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const fileInputRefs = useRef<Record<number, HTMLInputElement>>({});
 
   // Auto-save: Load draft on mount
@@ -62,10 +63,12 @@ export default function AuditForm() {
   // Filter questions by search - will be applied after categoriesToShow is defined
 
   // Auto-save: Save on changes
+  // Update save status
   useEffect(() => {
     if (!submitted && (formData.branchName || formData.auditorName || Object.keys(scores).length > 0)) {
       const draft: SavedDraft = { formData, scores, auditMode, lang, savedAt: Date.now() };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+      setLastSaved(new Date());
     }
   }, [formData, scores, auditMode, lang, submitted]);
 
@@ -372,6 +375,13 @@ ${actionText}`;
             
             {/* Right: Controls */}
             <div className="flex items-center gap-2">
+              {/* Save Status */}
+              {lastSaved && !submitted && (
+                <span className="text-[10px] text-green-600 font-medium hidden sm:inline-flex items-center gap-1 animate-pulse">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                  {t('Saved', 'تم الحفظ')}
+                </span>
+              )}
               {hasDraft && !submitted && (
                 <button onClick={clearDraft} aria-label={t('Clear draft', 'مسح المسودة')} className="px-2 py-1.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg text-xs font-bold text-amber-700" title="Clear draft">
                   📝 {t('Clear', 'مسح')}
@@ -679,16 +689,16 @@ ${actionText}`;
                           </div>
                         )}
                         
-                        {/* Score Buttons - Compact */}
+                        {/* Score Buttons - Improved for mobile */}
                         <div className="flex items-center gap-1.5 mb-3">
                           {scoreButtons.map(b => (
-                            <button 
-                              key={b.s} 
+                            <button
+                              key={b.s}
                               onClick={() => handleScore(p.id, b.s)}
-                              className={`w-9 h-9 rounded-lg font-bold text-xs transition-all duration-200 ${
-                                scores[p.id]?.score === b.s 
-                                  ? `${b.c} shadow-lg scale-105 ring-2 ring-offset-1 ring-current` 
-                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'
+                              className={`min-w-[44px] h-11 sm:h-10 rounded-lg font-bold text-sm transition-all duration-200 active:scale-95 hover:scale-105 ${
+                                scores[p.id]?.score === b.s
+                                  ? `${b.c} shadow-lg ring-2 ring-offset-1 ring-current`
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:shadow-md'
                               }`}
                             >
                               {b.l}
