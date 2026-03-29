@@ -204,7 +204,7 @@ export default function AuditForm() {
         scores, totalScore: currentCalc.total + full.total, percentage: currentCalc.pct, actionItems,
         emailList: [], lang: lang
       };
-      blob = generatePDFBlob(submission);
+      blob = await generatePDFBlob(submission);
       
       // Convert to base64
       const reader = new FileReader();

@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { auditCategories } from './auditData';
+import QRCode from 'qrcode';
 
 export interface AuditSubmission {
   id: string;
@@ -20,7 +21,66 @@ export interface AuditSubmission {
 // Get all points as flat array
 const allPoints = auditCategories.flatMap(cat => cat.points);
 
-export function generatePDF(submission: AuditSubmission): jsPDF {
+// ============ CHART FUNCTIONS ============
+function drawBarChart(doc: jsPDF, data: { label: string; value: number; max: number }[], startX: number, startY: number, width: number, height: number, isArabic: boolean): number {
+  const maxValue = Math.max(...data.map(d => d.max), 1);
+  const barWidth = (width - 20) / data.length;
+  const maxBarHeight = height - 25;
+
+  let currentX = startX;
+
+  data.forEach((item, i) => {
+    const barHeight = (item.value / maxValue) * maxBarHeight;
+    const x = startX + 10 + (i * barWidth);
+
+    // Bar color based on percentage
+    const pct = item.max > 0 ? (item.value / item.max) * 100 : 0;
+    let barColor: [number, number, number];
+    if (pct >= 90) barColor = [39, 174, 96]; // green
+    else if (pct >= 70) barColor = [243, 156, 18]; // orange
+    else barColor = [231, 76, 60]; // red
+
+    doc.setFillColor(barColor[0], barColor[1], barColor[2]);
+    doc.roundedRect(x, startY + maxBarHeight - barHeight + 20, barWidth - 3, barHeight - 3, 1, 1, 'F');
+
+    // Label
+    doc.setTextColor(60, 60, 60);
+    doc.setFontSize(7);
+    doc.text(item.label.substring(0, 8), x + barWidth / 6, startY + maxBarHeight + 5);
+
+    // Value
+    doc.setFontSize(8);
+    doc.setTextColor(40, 40, 40);
+    doc.text(`${Math.round(pct)}%`, x + barWidth / 6, startY + maxBarHeight - barHeight + 18);
+  });
+
+  return startY + maxBarHeight + 15;
+}
+
+function drawPieChart(doc: jsPDF, data: { label: string; value: number; color: [number, number, number] }[], centerX: number, centerY: number, radius: number, isArabic: boolean): void {
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  if (total === 0) return;
+
+  let startAngle = -Math.PI / 2;
+
+  data.forEach((item) => {
+    const sliceAngle = (item.value / total) * 2 * Math.PI;
+    const endAngle = startAngle + sliceAngle;
+
+    doc.setFillColor(item.color[0], item.color[1], item.color[2]);
+    doc.triangle(
+      centerX, centerY,
+      centerX + radius * Math.cos(startAngle), centerY + radius * Math.sin(startAngle),
+      centerX + radius * Math.cos(endAngle), centerY + radius * Math.sin(endAngle),
+      'F'
+    );
+    (doc as any).arc(centerX, centerY, radius, startAngle, endAngle, 'F');
+
+    startAngle = endAngle;
+  });
+}
+
+export async function generatePDF(submission: AuditSubmission): Promise<jsPDF> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const isArabic = submission.lang === 'ar';
@@ -108,6 +168,22 @@ export function generatePDF(submission: AuditSubmission): jsPDF {
   doc.setFontSize(8);
   doc.text(`${totalScore} pts`, pageWidth - 35, 33, { align: 'center' });
 
+  // QR Code - link to the audit details
+  try {
+    const qrData = `https://green-cafe-audit.vercel.app/audit/${submission.id || 'preview'}`;
+    const qrImage = await QRCode.toDataURL(qrData, {
+      width: 80,
+      margin: 1,
+      color: { dark: '#16A085', light: '#FFFFFF' }
+    });
+    doc.addImage(qrImage, 'PNG', pageWidth - 95, 8, 25, 25);
+    doc.setFontSize(6);
+    doc.setTextColor(120, 120, 120);
+    doc.text(isArabic ? 'مسح' : 'Scan', pageWidth - 82.5, 36, { align: 'center' });
+  } catch (e) {
+    // QR code failed, continue without it
+  }
+
   // ============ INFO SECTION ============
   const infoY = 55;
   
@@ -169,6 +245,15 @@ export function generatePDF(submission: AuditSubmission): jsPDF {
     doc.text(s.sub, x + 30, summaryY + 17);
   });
 
+  // ============ SCORE CHART ============
+  const chartData = catScores.map(cat => ({
+    label: cat.name.substring(0, 12),
+    value: cat.earned,
+    max: cat.max
+  }));
+  const chartY = summaryY + 32;
+  drawBarChart(doc, chartData, 15, chartY, 180, 50, isArabic);
+
   // ============ CATEGORY BREAKDOWN ============
   const catY = summaryY + 35;
   doc.setFontSize(11);
@@ -201,6 +286,63 @@ export function generatePDF(submission: AuditSubmission): jsPDF {
       4: { fontStyle: 'bold', halign: 'center' }
     }
   });
+
+  // ============ EVIDENCE PHOTOS ============
+  let photoY = (doc as any).lastAutoTable?.finalY + 10 || catY + 60;
+  if (photoY > 200) {
+    doc.addPage();
+    photoY = 20;
+  }
+
+  // Find items with photos
+  const itemsWithPhotos = allPoints.filter(p => {
+    const entry = submission.scores[p.id];
+    return entry?.photo;
+  });
+
+  if (itemsWithPhotos.length > 0) {
+    doc.setFontSize(11);
+    doc.setTextColor(22, 160, 133);
+    doc.text(isArabic ? 'صور الأدلة' : 'Evidence Photos', 15, photoY);
+
+    let col = 0;
+    const cols = 4;
+    const photoSize = 38;
+    let photoRowY = photoY + 8;
+
+    for (const point of itemsWithPhotos) {
+      const entry = submission.scores[point.id];
+      if (!entry?.photo) continue;
+
+      try {
+        const x = 15 + (col * (photoSize + 8));
+
+        if (photoRowY + photoSize > 270) {
+          doc.addPage();
+          photoRowY = 20;
+          col = 0;
+        }
+
+        doc.addImage(entry.photo, 'JPEG', x, photoRowY, photoSize, photoSize * 0.75);
+
+        doc.setFontSize(7);
+        doc.setTextColor(255, 255, 255);
+        doc.setFillColor(0, 0, 0);
+        doc.roundedRect(x, photoRowY + photoSize * 0.75 - 7, 14, 7, 1, 1, 'F');
+        doc.text(`Q${point.id}`, x + 2, photoRowY + photoSize * 0.75 - 2);
+
+        col++;
+        if (col >= cols) {
+          col = 0;
+          photoRowY += photoSize * 0.75 + 12;
+        }
+      } catch (e) {
+        console.log('Failed to add photo for question', point.id);
+      }
+    }
+
+    photoY = col > 0 ? photoRowY + photoSize * 0.75 + 5 : photoRowY;
+  }
 
   // ============ CCP DETAILS ============
   let currentY = (doc as any).lastAutoTable?.finalY + 15 || catY + 60;
@@ -333,7 +475,7 @@ export function generatePDF(submission: AuditSubmission): jsPDF {
   return doc;
 }
 
-export function generatePDFBlob(submission: AuditSubmission): Blob {
-  const doc = generatePDF(submission);
+export async function generatePDFBlob(submission: AuditSubmission): Promise<Blob> {
+  const doc = await generatePDF(submission);
   return doc.output('blob');
 }
