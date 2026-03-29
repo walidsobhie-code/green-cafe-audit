@@ -422,7 +422,9 @@ ${actionText}`;
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <div className="text-2xl font-black text-gray-900">{currentCalc.pct}%</div>
+                <div className={`text-3xl sm:text-2xl font-black bg-gradient-to-br from-gray-900 via-gray-700 to-gray-900 bg-clip-text text-transparent ${currentCalc.pct >= 90 ? 'drop-shadow-lg' : ''}`}>
+                  {currentCalc.pct}%
+                </div>
                 <div className="text-[10px] text-gray-400">{currentCalc.total}/{currentCalc.max}</div>
               </div>
               {/* Progress bar */}
@@ -449,13 +451,20 @@ ${actionText}`;
               const isWarn = pct >= 70 && pct < 90;
               return (
                 <div key={cat.id} className="flex flex-col items-center">
-                  <div className={`relative ${cat.size} drop-shadow-xl`}>
-                    <svg className={`${cat.size} transform -rotate-90`} viewBox="0 0 36 36">
+                  <div className={`relative ${cat.size} drop-shadow-2xl ${isPass ? 'shadow-green-500/50' : isWarn ? 'shadow-yellow-500/50' : 'shadow-red-500/50'}`}>
+                    <svg className={`${cat.size} transform -rotate-90 drop-shadow-lg`} viewBox="0 0 36 36">
                       <defs>
                         <linearGradient id={`grad-${cat.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
                           <stop offset="0%" stopColor={isPass ? '#22c55e' : isWarn ? '#eab308' : '#ef4444'} />
                           <stop offset="100%" stopColor={isPass ? '#16a34a' : isWarn ? '#ca8a04' : '#dc2626'} />
                         </linearGradient>
+                        <filter id={`glow-${cat.id}`}>
+                          <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+                          <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                          </feMerge>
+                        </filter>
                       </defs>
                       <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e5e7eb" strokeWidth="3" />
                       <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={`url(#grad-${cat.id})`} strokeWidth="3.5" strokeDasharray={`${pct}, 100`} strokeLinecap="round" className="transition-all duration-700" />
@@ -639,7 +648,7 @@ ${actionText}`;
                   
                   <div className="p-5 space-y-5">
                     {cat.points.map(p => (
-                      <div key={p.id} className={`border-2 rounded-2xl p-5 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5 ${p.isCCP ? 'border-red-300 bg-red-50/50' : 'border-gray-100 hover:border-green-300'}`}>
+                      <div key={p.id} className={`border-2 rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:shadow-black/10 transform hover:-translate-y-1 active:scale-[0.98] ${p.isCCP ? 'border-red-300 bg-red-50/50' : 'border-gray-100 hover:border-green-300 bg-white'}`}>
                         {/* Question Header with Big Number */}
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
