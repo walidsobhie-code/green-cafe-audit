@@ -10,7 +10,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Green Cafe Audit | تدقيق جرين كافيه",
-  description: "50-Point Bilingual Audit Checklist for Green Cafe Branch Visits - Conduct comprehensive branch audits with this detailed checklist covering customer service, cleanliness, food quality, and more.",
+  description: "Bilingual audit checklist for Green Cafe branch visits. Conduct comprehensive audits covering customer service, cleanliness, food quality & more.",
   manifest: "/manifest.json",
   metadataBase: new URL(BASE_URL),
   alternates: {
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Green Cafe Audit | تدقيق جرين كافيه",
-    description: "50-Point Bilingual Audit Checklist for Green Cafe Branch Visits",
+    description: "Bilingual audit checklist for Green Cafe branch visits",
     url: BASE_URL,
     siteName: "Green Cafe Audit",
     locale: "ar-SA",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Green Cafe Audit | تدقيق جرين كافيه",
-    description: "50-Point Bilingual Audit Checklist for Green Cafe Branch Visits",
+    description: "Bilingual audit checklist for Green Cafe branch visits",
     images: [`${BASE_URL}/og-image.png`],
   },
 };

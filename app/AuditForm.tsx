@@ -363,7 +363,7 @@ ${actionText}`;
           <div className="flex items-center justify-between gap-3">
             {/* Left: Logo + Title */}
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="Green Cafe" className="w-12 h-12 rounded-xl shadow-md" />
+              <img src="/logo.png" alt="Green Cafe" className="w-12 h-12 rounded-xl shadow-md" width={48} height={48} />
               <div>
                 <h1 className="text-xl font-black text-gray-900">Green Cafe</h1>
                 <p className="text-xs text-gray-500 font-medium">{t('Branch Audit', 'تدقيق الفروع')}</p>
@@ -373,21 +373,21 @@ ${actionText}`;
             {/* Right: Controls */}
             <div className="flex items-center gap-2">
               {hasDraft && !submitted && (
-                <button onClick={clearDraft} className="px-2 py-1.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg text-xs font-bold text-amber-700" title="Clear draft">
+                <button onClick={clearDraft} aria-label={t('Clear draft', 'مسح المسودة')} className="px-2 py-1.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg text-xs font-bold text-amber-700" title="Clear draft">
                   📝 {t('Clear', 'مسح')}
                 </button>
               )}
-              <button onClick={() => setShowSearch(!showSearch)} className="p-2.5 bg-gradient-to-b from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 rounded-xl text-gray-600 shadow-md border-2 border-gray-200 hover:shadow-lg">
+              <button onClick={() => setShowSearch(!showSearch)} aria-label={t('Search', 'بحث')} className="p-2.5 bg-gradient-to-b from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 rounded-xl text-gray-600 shadow-md border-2 border-gray-200 hover:shadow-lg">
                 <Search className="w-4 h-4" />
               </button>
-              <a href="/dashboard" className="px-3 py-2.5 bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl text-xs font-bold text-white shadow-lg border-b-2 border-green-700 hover:shadow-xl">
+              <a href="/dashboard" aria-label={t('Go to Dashboard', 'اذهب إلى لوحة التحكم')} className="px-3 py-2.5 bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl text-xs font-bold text-white shadow-lg border-b-2 border-green-700 hover:shadow-xl">
                 📊 {t('Dashboard', 'لوحة')}
               </a>
-              <select value={auditMode} onChange={(e) => setAuditMode(e.target.value as 'shortlist' | 'full')} className="px-2 py-2.5 bg-gradient-to-b from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl text-xs font-bold text-gray-700 shadow-md">
+              <select value={auditMode} onChange={(e) => setAuditMode(e.target.value as 'shortlist' | 'full')} aria-label={t('Audit mode', 'وضع التدقيق')} className="px-2 py-2.5 bg-gradient-to-b from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl text-xs font-bold text-gray-700 shadow-md">
                 <option value="shortlist">{t('25', '25')}</option>
                 <option value="full">{t('50', '50')}</option>
               </select>
-              <button onClick={() => setLang(isArabic ? 'en' : 'ar')} className="px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-bold text-gray-700">
+              <button onClick={() => setLang(isArabic ? 'en' : 'ar')} aria-label={t('Switch language', 'تغيير اللغة')} className="px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-bold text-gray-700">
                 {isArabic ? 'EN' : 'عربي'}
               </button>
             </div>
@@ -397,7 +397,7 @@ ${actionText}`;
         {/* Search Bar */}
         {showSearch && (
           <div className="px-3 pb-3">
-            <input type="text" placeholder={t('Search...', 'بحث...')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm" autoFocus />
+            <input type="text" aria-label={t('Search questions', 'البحث في الأسئلة')} placeholder={t('Search...', 'بحث...')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm" autoFocus />
           </div>
         )}
         
@@ -513,13 +513,14 @@ ${actionText}`;
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('الفرع', 'Branch')} *</label>
-                  <input 
-                    list="stores-list" 
-                    type="text" 
-                    value={formData.branchName} 
+                  <label htmlFor="branch-name" className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('الفرع', 'Branch')} *</label>
+                  <input
+                    id="branch-name"
+                    list="stores-list"
+                    type="text"
+                    value={formData.branchName}
                     onChange={e => setFormData({...formData, branchName: e.target.value})}
-                    className="w-full border-2 border-gray-200 rounded-xl px-3.5 py-3 text-sm font-semibold text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none" 
+                    className="w-full border-2 border-gray-200 rounded-xl px-3.5 py-3 text-sm font-semibold text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none"
                     placeholder={t('Select or type branch', 'اختر أو اكتب الفرع')}
                   />
                   <datalist id="stores-list">
@@ -529,13 +530,13 @@ ${actionText}`;
                   </datalist>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('المدقق', 'Auditor')} *</label>
-                  <input type="text" value={formData.auditorName} onChange={e => setFormData({...formData, auditorName: e.target.value})}
+                  <label htmlFor="auditor-name" className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('المدقق', 'Auditor')} *</label>
+                  <input id="auditor-name" type="text" value={formData.auditorName} onChange={e => setFormData({...formData, auditorName: e.target.value})}
                     className="w-full border-2 border-gray-200 rounded-xl px-3.5 py-3 text-sm font-semibold text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none" placeholder={t('Ahmed', 'أحمد')} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('التاريخ', 'Date')}</label>
-                  <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})}
+                  <label htmlFor="audit-date" className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">{t('التاريخ', 'Date')}</label>
+                  <input id="audit-date" type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})}
                     className="w-full border-2 border-gray-200 rounded-xl px-3.5 py-3 text-sm font-semibold text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none" />
                 </div>
               </div>
@@ -714,17 +715,19 @@ ${actionText}`;
                         {p.requiresTemp && (
                           <div className="flex items-center gap-2 mb-3 p-2 bg-blue-50 rounded-xl border border-blue-200">
                             <span className="text-sm">🌡️</span>
-                            <input type="number" 
-                              placeholder={`${p.tempMin}-${p.tempMax}°C`} 
-                              value={scores[p.id]?.temperature ?? ''} 
+                            <input type="number"
+                              aria-label={t('Temperature', 'درجة الحرارة')}
+                              placeholder={`${p.tempMin}-${p.tempMax}°C`}
+                              value={scores[p.id]?.temperature ?? ''}
                               onChange={e => setScores(prev => ({ ...prev, [p.id]: { ...prev[p.id], temperature: e.target.value } }))}
                               className="flex-1 bg-white border-2 border-blue-200 rounded-lg px-3 py-2 text-sm font-bold text-blue-700 focus:border-blue-400 outline-none" />
                           </div>
                         )}
-                        
+
                         {/* Notes Field - Expandable */}
                         <div className="relative">
-                          <textarea 
+                          <textarea
+                            aria-label={t('Notes for question', 'ملاحظات للسؤال')}
                             placeholder={t('Add notes...', 'أضف ملاحظات...')} 
                             value={scores[p.id]?.note ?? ''} 
                             onChange={e => handleNote(p.id, e.target.value)}
